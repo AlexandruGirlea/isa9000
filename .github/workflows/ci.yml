@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: pip install -e ".[ui,dev]"
+      - run: pip install -e ".[audio-generation-ui,dev]"
       - run: ruff check .
 
   test:
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e ".[ui,dev]"
+      - run: pip install -e ".[audio-generation-ui,dev]"
       - run: pytest -q
 
   build:
@@ -50,17 +50,17 @@ jobs:
       - name: Install the wheel into a clean environment
         run: |
           python -m venv /tmp/wheelenv
-          /tmp/wheelenv/bin/pip install "$(ls dist/*.whl)[ui]"
+          /tmp/wheelenv/bin/pip install "$(ls dist/*.whl)[audio-generation-ui]"
       # Runs outside the checkout so a broken wheel cannot fall back to ./src.
-      - name: Build an empty website from the installed wheel
+      - name: Build an empty presentation website from the installed wheel
         working-directory: /tmp
         run: |
           /tmp/wheelenv/bin/isa9000 --version
           /tmp/wheelenv/bin/isa9000 init /tmp/isa9000.toml
           mkdir -p /tmp/audio_kb
-          /tmp/wheelenv/bin/isa9000 --config /tmp/isa9000.toml site --audio-kb /tmp/audio_kb --output /tmp/site
-          test -f /tmp/site/index.html -a -f /tmp/site/logo.png -a -f /tmp/site/vendor/bootstrap.min.css
-          /tmp/wheelenv/bin/python -c "import isa9000.ui.app as app; app.create_app('/tmp/isa9000.toml')"
+          /tmp/wheelenv/bin/isa9000 --config /tmp/isa9000.toml presentation-website --audio-kb /tmp/audio_kb --output /tmp/presentation_website
+          test -f /tmp/presentation_website/index.html -a -f /tmp/presentation_website/logo.png -a -f /tmp/presentation_website/vendor/bootstrap.min.css
+          /tmp/wheelenv/bin/python -c "import isa9000.audio_generation_ui.app as app; app.create_app('/tmp/isa9000.toml')"
       - uses: actions/upload-artifact@v4
         with:
           name: dist

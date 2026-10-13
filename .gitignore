@@ -29,5 +29,5 @@ service-account*.json
 # Generated audio knowledge base
 isa9000-audio_kb/
 
-# Generated listening site
-isa9000-site/
+# Generated presentation website
+isa9000-presentation_website/

@@ -9,9 +9,12 @@ def serve(port: int = 8790, open_browser: bool = True, config_path: str | None =
     try:
         import uvicorn
 
-        from isa9000.ui.app import create_app
+        from isa9000.audio_generation_ui.app import create_app
     except ImportError:
-        print("the browser app needs extras: pip install 'isa9000[ui]'", file=sys.stderr)
+        print(
+            "the audio generation UI needs extras: pip install 'isa9000[audio-generation-ui]'",
+            file=sys.stderr,
+        )
         return 2
 
     url = f"http://127.0.0.1:{port}"

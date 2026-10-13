@@ -1,17 +1,18 @@
 ---
-title: Website and publishing
+title: Presentation website and publishing
 nav_order: 6
 ---
 
-# Website and publishing
+# Presentation website and publishing
 
-`isa9000 site` builds the knowledge base website from the podcasts folder into
-`isa9000-site/`. `--serve` previews it at `http://127.0.0.1:8800`; in the studio,
-**Build the local website** does the same. It needs no Google credentials and
+`isa9000 presentation-website` builds the presentation website from the podcasts
+folder into `isa9000-presentation_website/`. `--serve` previews it at
+`http://127.0.0.1:8800`; in the audio generation UI,
+**Build the presentation website** does the same. It needs no Google credentials and
 never calls a model.
 
 <p align="center">
-  <img src="assets/img/site-podcast.png" alt="A podcast page with its cover and player" width="900">
+  <img src="assets/img/presentation-website-podcast.png" alt="A podcast page with its cover and player" width="900">
 </p>
 
 Listeners get search across podcasts and episodes, cover art, a player with
@@ -23,27 +24,27 @@ engines not to index it.
 
 ## After every change
 
-The website does not update itself. After a new podcast, a re-recorded episode,
+The presentation website does not update itself. After a new podcast, a re-recorded episode,
 a corrected transcript, a new cover or a removed podcast folder, build it again
 and upload it:
 
 ```bash
 isa9000 record "isa9000-audio_kb/<podcast>" --episode 2   # if an episode changed
-isa9000 site
-az storage blob sync --account-name <account> --container '$web' --source isa9000-site --auth-mode login --delete-destination true
+isa9000 presentation-website
+az storage blob sync --account-name <account> --container '$web' --source isa9000-presentation_website --auth-mode login --delete-destination true
 ```
 
 Other hosts:
 
 ```bash
-aws s3 sync isa9000-site s3://intranet-audio-kb --delete
-gcloud storage rsync isa9000-site gs://intranet-audio-kb --recursive --delete-unmatched-destination-objects
-rsync -a --delete isa9000-site/ webserver:/var/www/audio-kb/
+aws s3 sync isa9000-presentation_website s3://intranet-audio-kb --delete
+gcloud storage rsync isa9000-presentation_website gs://intranet-audio-kb --recursive --delete-unmatched-destination-objects
+rsync -a --delete isa9000-presentation_website/ webserver:/var/www/audio-kb/
 ```
 
 Serve it only inside your network. The host must answer byte-range requests so
 the player can seek; all of the above do, Python's `http.server` does not. Set
-`[site] base_url` to also get podcast feeds people can subscribe to.
+`[presentation_website] base_url` to also get podcast feeds people can subscribe to.
 
 ## Automate with GitHub Actions
 
@@ -59,7 +60,7 @@ git add .gitattributes isa9000-audio_kb isa9000.toml   # commit the config witho
 git commit -m "Add the audio knowledge base"
 ```
 
-`.github/workflows/publish-website.yml` rebuilds and uploads the website
+`.github/workflows/publish-website.yml` rebuilds and uploads the presentation website
 whenever anything in the podcasts folder changes. The Azure identity needs the
 *Storage Blob Data Contributor* role.
 
@@ -84,7 +85,7 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install isa9000
-      - run: isa9000 site
+      - run: isa9000 presentation-website
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -92,7 +93,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - run: >-
           az storage blob sync --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }}
-          --container '$web' --source isa9000-site --auth-mode login --delete-destination true
+          --container '$web' --source isa9000-presentation_website --auth-mode login --delete-destination true
 ```
 
 `.github/workflows/create-podcast.yml` creates a podcast from the **Actions**

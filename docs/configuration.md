@@ -50,7 +50,7 @@ Names the voice gets wrong go in `[narrator.pronunciations]`:
 | `powered_by` | `"Powered by girlea.ro"` | Attribution; `""` removes it. |
 | `greeting` | `"Hi, I'm {narrator}. This is {podcast}, episode {episode} of {episodes}: {title}."` | Spoken at the start of every episode. |
 | `ending`, `final_ending` | Short sign-offs | Spoken at the end; the last episode uses `final_ending`. |
-| `accent_color` | `"#6C3CE1"` | The brand colour of the studio and the website. |
+| `accent_color` | `"#6C3CE1"` | The brand colour of the audio generation UI and the presentation website. |
 | `logo` | `""` | An SVG, PNG or JPG. Empty uses the isa9000 logo. |
 
 Greetings and endings can use `{narrator}`, `{brand}`, `{podcast}`, `{episode}`,
@@ -63,12 +63,12 @@ Greetings and endings can use `{narrator}`, `{brand}`, `{podcast}`, `{episode}`,
 | `folder` | `"isa9000-audio_kb"` | Where podcasts are saved. |
 | `fact_check` | `true` | Check every claim against its sources. |
 
-## site
+## presentation_website
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `folder` | `"isa9000-site"` | Where the website is built. |
-| `base_url` | `""` | The website's address; needed for podcast feeds. |
+| `folder` | `"isa9000-presentation_website"` | Where the presentation website is built. |
+| `base_url` | `""` | The presentation website's address; needed for podcast feeds. |
 | `title` | `""` | The name in the navigation bar. Empty uses `brand`. |
 | `heading` | `"Internal Audio Knowledge Base"` | The home-page heading. |
 | `description` | `"AI-generated podcasts that keep the team up to date."` | The line under it. |

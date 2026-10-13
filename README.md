@@ -26,32 +26,34 @@
 <p align="center">
   <a href="https://alexandrugirlea.github.io/isa9000/"><strong>Documentation</strong></a>
   ·
-  <a href="https://alexandrugirlea.github.io/isa9000/ui.html">Studio</a>
+  <a href="https://alexandrugirlea.github.io/isa9000/audio-generation-ui.html">Audio generation UI</a>
   ·
   <a href="https://alexandrugirlea.github.io/isa9000/cli.html">CLI and Python</a>
   ·
-  <a href="https://alexandrugirlea.github.io/isa9000/publishing.html">Website and publishing</a>
+  <a href="https://alexandrugirlea.github.io/isa9000/publishing.html">Presentation website and publishing</a>
   ·
   <a href="https://alexandrugirlea.github.io/isa9000/quality.html">How quality is enforced</a>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AlexandruGirlea/isa9000/main/docs/assets/img/site-home.png" alt="The Internal Audio Knowledge Base built by isa9000" width="900">
+  If isa9000 is useful to you, please ⭐ <a href="https://github.com/AlexandruGirlea/isa9000">star the repository</a>: it helps other teams find it.
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AlexandruGirlea/isa9000/main/docs/assets/img/presentation-website-home.png" alt="The Internal Audio Knowledge Base built by isa9000" width="900">
 </p>
 
 Developed by Isabela and Alex @ [girlea.ro](https://girlea.ro),
 from the engine behind [devstories.eu](https://devstories.eu) (more than 60 audio
 courses). **Powered by the [Gemini API](https://ai.google.dev/gemini-api/docs).**
 
-If isa9000 is useful to you, please ⭐ [star the repository](https://github.com/AlexandruGirlea/isa9000):
-it helps other teams find it.
-
 ## Quick start
 
 ```bash
-pip install "isa9000[ui]"
-isa9000 init    # writes isa9000.toml: add a Gemini API key to it
-isa9000 ui      # opens the studio at http://127.0.0.1:8790
+pip install "isa9000[audio-generation-ui]"
+isa9000 init                           # writes isa9000.toml: add a Gemini API key to it
+isa9000 audio-generation-ui            # create podcasts in your browser at http://127.0.0.1:8790
+isa9000 presentation-website --serve   # build the presentation website, preview it at http://127.0.0.1:8800
 ```
 
 Python 3.11 or newer, on Linux or macOS. Servers and CI only need
@@ -65,27 +67,28 @@ Python 3.11 or newer, on Linux or macOS. Servers and CI only need
    listener review scores below 9/10 and draws cover art. Podcasts that pass the
    [quality gate](https://alexandrugirlea.github.io/isa9000/quality.html) are
    recorded straight away; the rest wait for a person to review them.
-2. **Publish.** `isa9000 site` builds a static website from your podcasts. Host
-   it on any internal web server or storage bucket, by hand or with
+2. **Publish.** `isa9000 presentation-website` builds a static presentation
+   website from your podcasts. Host it on any internal web server or storage
+   bucket, by hand or with
    [GitHub Actions](https://alexandrugirlea.github.io/isa9000/publishing.html#automate-with-github-actions).
 3. **Listen.** People search, play, read transcripts and share episodes from a
    phone or a desktop.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AlexandruGirlea/isa9000/main/docs/assets/img/studio.png" alt="The isa9000 studio" width="900">
+  <img src="https://raw.githubusercontent.com/AlexandruGirlea/isa9000/main/docs/assets/img/audio-generation-ui.png" alt="The isa9000 audio generation UI" width="900">
 </p>
 
-Business users create podcasts in the studio on their own computer and download
-the results; developers use the command line, Python and CI. Everything listeners
-hear or see, from the narrator to the logo, is a setting.
+Business users create podcasts in the audio generation UI on their own computer
+and download the results; developers use the command line, Python and CI.
+Everything listeners hear or see, from the narrator to the logo, is a setting.
 
 ## Privacy
 
 Only what the models need leaves your machine: your request, the content of
 your sources (PDFs are sent as files), the scripts to record and short clips of
 each recording for its check. It goes to the Google model endpoints you
-configure: the Gemini API, or Vertex AI in your own project. The website is
-static files with no server code or tracking. Report vulnerabilities
+configure: the Gemini API, or Vertex AI in your own project. The presentation
+website is static files with no server code or tracking. Report vulnerabilities
 privately: see [SECURITY.md](https://github.com/AlexandruGirlea/isa9000/blob/main/SECURITY.md).
 
 ## License

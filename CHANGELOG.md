@@ -3,6 +3,18 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.1.1
+
+- Clearer names. The browser app that creates podcasts is now
+  `isa9000 audio-generation-ui`, installed with `isa9000[audio-generation-ui]`
+  (was `isa9000 ui` and `isa9000[ui]`). The website where people listen is now
+  `isa9000 presentation-website`, with a `[presentation_website]` section in
+  `isa9000.toml`, an `isa9000-presentation_website` folder and
+  `isa9000.presentation_website.build_presentation_website` in Python (was
+  `site`).
+- Upgrading from 0.1.0: rename `[site]` to `[presentation_website]` in
+  `isa9000.toml`. The old `isa9000-site` folder can be deleted.
+
 ## 0.1.0
 
 First release.

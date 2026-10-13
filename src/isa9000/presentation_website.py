@@ -30,8 +30,8 @@ from isa9000.progress import Progress, Step
 from isa9000.version import __version__
 
 ITUNES = "http://www.itunes.com/dtds/podcast-1.0.dtd"
-MARKER = ".isa9000-site"
-STATIC = Path(__file__).with_name("site_static")
+MARKER = ".isa9000-presentation_website"
+STATIC = Path(__file__).with_name("presentation_website_static")
 RANGE = re.compile(r"bytes=(\d*)-(\d*)$")
 
 
@@ -161,7 +161,7 @@ def _feed(
     ET.SubElement(channel, f"{{{ITUNES}}}type").text = "serial" if serial else "episodic"
     if image:
         ET.SubElement(channel, f"{{{ITUNES}}}image", {"href": image})
-    base_url = config.site.base_url
+    base_url = config.presentation_website.base_url
     for podcast in podcasts:
         created = datetime.fromisoformat(podcast["created"])
         for episode in podcast["episodes"]:
@@ -315,7 +315,7 @@ def _page(podcast: dict, site_root: Path) -> dict:
     }
 
 
-def build_site(
+def build_presentation_website(
     config: Config | None = None,
     podcasts: str | Path | None = None,
     output: str | Path | None = None,
@@ -323,17 +323,17 @@ def build_site(
 ) -> Path:
     config = config or load_config()
     podcasts_root = Path(podcasts).expanduser() if podcasts else config.output_folder
-    site_root = Path(output).expanduser() if output else config.site_folder
+    site_root = Path(output).expanduser() if output else config.presentation_website_folder
     if not podcasts_root.is_dir():
         raise ValueError(f"audio knowledge base folder not found: {podcasts_root}")
     _prepare(site_root)
 
-    progress(Step("site", f"Collecting podcasts from {podcasts_root}"))
+    progress(Step("presentation_website", f"Collecting podcasts from {podcasts_root}"))
     library = _collect(podcasts_root, site_root)
     _prune(site_root, {podcast["slug"] for podcast in library})
     logo = _logo(config, site_root)
-    title = config.site.title or config.branding.brand
-    base_url = config.site.base_url
+    title = config.presentation_website.title or config.branding.brand
+    base_url = config.presentation_website.base_url
 
     feed = None
     if base_url:
@@ -352,17 +352,28 @@ def build_site(
             (site_root / podcast["feed"]).write_bytes(body)
         feed = "feed.xml"
         everything = _feed(
-            config, title, config.site.description, base_url, library, image, serial=False
+            config,
+            title,
+            config.presentation_website.description,
+            base_url,
+            library,
+            image,
+            serial=False,
         )
         (site_root / feed).write_bytes(everything)
     else:
-        progress(Step("site", "No [site] base_url set: building the site without podcast feeds"))
+        progress(
+            Step(
+                "presentation_website",
+                "No [presentation_website] base_url set: building without podcast feeds",
+            )
+        )
 
     color = config.branding.accent_color or DEFAULT_COLOR
     site = {
         "title": title,
-        "heading": config.site.heading,
-        "description": config.site.description,
+        "heading": config.presentation_website.heading,
+        "description": config.presentation_website.description,
         "brand": config.branding.brand,
         "powered_by": config.branding.powered_by,
         "color": color,
@@ -381,7 +392,9 @@ def build_site(
     (site_root / "library.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
     shutil.copytree(STATIC, site_root, dirs_exist_ok=True)
-    templates = Environment(loader=PackageLoader("isa9000", "site_templates"), autoescape=True)
+    templates = Environment(
+        loader=PackageLoader("isa9000", "presentation_website_templates"), autoescape=True
+    )
     pages = [_page(podcast, site_root) for podcast in library]
     home = templates.get_template("index.html").render(
         site=site,
@@ -402,7 +415,8 @@ def build_site(
     progress(
         Step(
             "done",
-            f"Site ready in {site_root}: {len(library)} podcasts, {episodes} episodes",
+            f"Presentation website ready in {site_root}: "
+            f"{len(library)} podcasts, {episodes} episodes",
             folder=str(site_root),
         )
     )
@@ -435,7 +449,7 @@ class _Preview(http.server.SimpleHTTPRequestHandler):
         return io.BytesIO(body)
 
 
-def serve_site(folder: Path, port: int) -> None:
+def serve_presentation_website(folder: Path, port: int) -> None:
     handler = functools.partial(_Preview, directory=str(folder))
     with http.server.ThreadingHTTPServer(("127.0.0.1", port), handler) as server:
         print(f"Previewing on http://127.0.0.1:{port}  (ctrl-c to stop)")

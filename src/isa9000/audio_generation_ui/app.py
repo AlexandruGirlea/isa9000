@@ -33,7 +33,9 @@ from isa9000.links import check_source
 from isa9000.podcast import MANIFEST, load_manifest, member
 
 STATIC = pathlib.Path(__file__).resolve().parent / "static"
-SITE_ASSETS = pathlib.Path(__file__).resolve().parent.parent / "site_static"
+PRESENTATION_WEBSITE_ASSETS = (
+    pathlib.Path(__file__).resolve().parent.parent / "presentation_website_static"
+)
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
 CREATE_STEPS = [
     ("check", "Checking your sources"),
@@ -47,9 +49,10 @@ CREATE_STEPS = [
 RECORD_STEPS = [("record", "Recording the audio"), ("done", "Ready to listen")]
 STAGE_ALIASES = {"verify": "write"}
 NEEDS_REVIEW = 3
-SITE_TIMEOUT_S = 900
+PRESENTATION_WEBSITE_TIMEOUT_S = 900
 STORED = {".mp3", ".jpg", ".jpeg", ".png", ".woff", ".woff2"}
-# The studio tab shows the logo with a "record" badge, so it never looks like the website tab.
+# The audio generation UI tab shows the logo with a "record" badge, so it never looks like
+# the presentation website tab.
 FAVICON = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
     '<image href="data:{kind};base64,{data}" width="64" height="64"/>'
@@ -285,7 +288,7 @@ def _zip(folder: pathlib.Path, name: str) -> FileResponse:
 
 def create_app(config_path: str | None = None) -> FastAPI:
     job = Job(config_path)
-    site_lock = threading.Lock()
+    presentation_website_lock = threading.Lock()
 
     @contextlib.asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -293,7 +296,11 @@ def create_app(config_path: str | None = None) -> FastAPI:
         job.stop()
 
     app = FastAPI(
-        title="isa9000 studio", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
+        title="isa9000 audio generation UI",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+        lifespan=lifespan,
     )
     app.state.job = job
 
@@ -305,8 +312,8 @@ def create_app(config_path: str | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def guard(request: Request, call_next):
-        # The studio reads local files and spends API credit, so it only answers on loopback:
-        # pin the Host header against DNS rebinding and refuse cross-site writes.
+        # The audio generation UI reads local files and spends API credit, so it only answers
+        # on loopback: pin the Host header against DNS rebinding and refuse cross-site writes.
         host = request.headers.get("host", "")
         if host.split(":")[0] not in LOCAL_HOSTS:
             return JSONResponse({"detail": "bad host"}, status_code=421)
@@ -361,7 +368,9 @@ def create_app(config_path: str | None = None) -> FastAPI:
             "accent_color": settings.branding.accent_color,
             "narrator": settings.narrator.name,
             "output_folder": str(settings.output_folder.resolve()),
-            "site_ready": (settings.site_folder / "index.html").is_file(),
+            "presentation_website_ready": (
+                settings.presentation_website_folder / "index.html"
+            ).is_file(),
             "config_file": str(settings.path) if settings.path else None,
             "problem": credentials_problem(settings),
         }
@@ -439,45 +448,54 @@ def create_app(config_path: str | None = None) -> FastAPI:
         folder = pathlib.Path(job.folder)
         return _zip(folder, folder.name)
 
-    @app.post("/api/site")
-    def build_website() -> dict:
+    @app.post("/api/presentation-website")
+    def build_presentation_website() -> dict:
         settings = config()
-        if not site_lock.acquire(blocking=False):
-            raise HTTPException(status_code=409, detail="the website is already being built")
+        if not presentation_website_lock.acquire(blocking=False):
+            raise HTTPException(
+                status_code=409, detail="the presentation website is already being built"
+            )
         try:
             run = subprocess.run(
-                _command(config_path, "site"),
+                _command(config_path, "presentation-website"),
                 check=False,
                 capture_output=True,
                 text=True,
-                timeout=SITE_TIMEOUT_S,
+                timeout=PRESENTATION_WEBSITE_TIMEOUT_S,
             )
         finally:
-            site_lock.release()
+            presentation_website_lock.release()
         if run.returncode != 0:
             message = run.stderr.strip().splitlines()[-1] if run.stderr.strip() else ""
             raise HTTPException(
                 status_code=400,
-                detail=message.removeprefix("isa9000: ") or "the website could not be built",
+                detail=message.removeprefix("isa9000: ")
+                or "the presentation website could not be built",
             )
-        library = json.loads((settings.site_folder / "library.json").read_text(encoding="utf-8"))
+        library = json.loads(
+            (settings.presentation_website_folder / "library.json").read_text(encoding="utf-8")
+        )
         return {
-            "folder": str(settings.site_folder.resolve()),
+            "folder": str(settings.presentation_website_folder.resolve()),
             "podcasts": len(library["podcasts"]),
             "episodes": sum(len(podcast["episodes"]) for podcast in library["podcasts"]),
         }
 
-    @app.get("/api/site/download")
-    def download_site() -> FileResponse:
-        folder = config().site_folder
+    @app.get("/api/presentation-website/download")
+    def download_presentation_website() -> FileResponse:
+        folder = config().presentation_website_folder
         if not (folder / "index.html").is_file():
-            raise HTTPException(status_code=404, detail="build the local website first")
+            raise HTTPException(status_code=404, detail="build the presentation website first")
         return _zip(folder, folder.name)
 
     try:
-        site_folder = load_config(config_path).site_folder
+        presentation_website_folder = load_config(config_path).presentation_website_folder
     except ConfigError:
-        site_folder = Config().site_folder
-    app.mount("/assets", StaticFiles(directory=SITE_ASSETS), name="assets")
-    app.mount("/site", StaticFiles(directory=site_folder, html=True, check_dir=False), name="site")
+        presentation_website_folder = Config().presentation_website_folder
+    app.mount("/assets", StaticFiles(directory=PRESENTATION_WEBSITE_ASSETS), name="assets")
+    app.mount(
+        "/presentation-website",
+        StaticFiles(directory=presentation_website_folder, html=True, check_dir=False),
+        name="presentation-website",
+    )
     return app

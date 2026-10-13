@@ -6,8 +6,8 @@ import sys
 from isa9000.config import ConfigError, git_would_track, load_config, write_template
 from isa9000.links import check_sources
 from isa9000.podcast import cover_podcast, create_podcast, record_podcast
+from isa9000.presentation_website import build_presentation_website, serve_presentation_website
 from isa9000.progress import Progress, Step
-from isa9000.site import build_site, serve_site
 from isa9000.version import __version__
 
 DOCS = "https://alexandrugirlea.github.io/isa9000"
@@ -27,7 +27,7 @@ def _say(args: argparse.Namespace, text: str) -> None:
 
 def _init(args: argparse.Namespace) -> int:
     path = write_template(args.path, force=args.force)
-    print(f"Wrote {path}. Add your Google credentials to it, then run: isa9000 ui")
+    print(f"Wrote {path}. Add your Google credentials to it, then run: isa9000 audio-generation-ui")
     if git_would_track(path):
         print(f"Warning: git would commit {path}. It can hold credentials: add it to .gitignore.")
     return 0
@@ -89,8 +89,8 @@ def _cover(args: argparse.Namespace) -> int:
     return 0
 
 
-def _site(args: argparse.Namespace) -> int:
-    folder = build_site(
+def _presentation_website(args: argparse.Namespace) -> int:
+    folder = build_presentation_website(
         load_config(args.config),
         podcasts=args.audio_kb,
         output=args.output,
@@ -99,12 +99,12 @@ def _site(args: argparse.Namespace) -> int:
     if not args.serve:
         _say(args, f"Upload {folder} to your web server or storage: see {DOCS}/publishing.html")
         return 0
-    serve_site(folder, args.port)
+    serve_presentation_website(folder, args.port)
     return 0
 
 
-def _ui(args: argparse.Namespace) -> int:
-    from isa9000.ui.server import serve
+def _audio_generation_ui(args: argparse.Namespace) -> int:
+    from isa9000.audio_generation_ui.server import serve
 
     return serve(port=args.port, open_browser=not args.no_browser, config_path=args.config)
 
@@ -183,17 +183,29 @@ def build_parser() -> argparse.ArgumentParser:
     cover.add_argument("folder")
     cover.set_defaults(run=_cover)
 
-    site = commands.add_parser("site", help="build the knowledge base website from your podcasts")
-    site.add_argument("--audio-kb", help=library)
-    site.add_argument("--output", help="the website folder (default: [site] folder in the config)")
-    site.add_argument("--serve", action="store_true", help="preview the website after building it")
-    site.add_argument("--port", type=int, default=8800)
-    site.set_defaults(run=_site)
+    presentation_website = commands.add_parser(
+        "presentation-website",
+        help="build the presentation website where people listen to your podcasts",
+    )
+    presentation_website.add_argument("--audio-kb", help=library)
+    presentation_website.add_argument(
+        "--output",
+        help="the website folder (default: [presentation_website] folder in the config)",
+    )
+    presentation_website.add_argument(
+        "--serve", action="store_true", help="preview the website after building it"
+    )
+    presentation_website.add_argument("--port", type=int, default=8800)
+    presentation_website.set_defaults(run=_presentation_website)
 
-    ui = commands.add_parser("ui", help="open the studio in your browser")
-    ui.add_argument("--port", type=int, default=8790)
-    ui.add_argument("--no-browser", action="store_true", help="do not open a browser window")
-    ui.set_defaults(run=_ui)
+    audio_generation_ui = commands.add_parser(
+        "audio-generation-ui", help="open the audio generation UI in your browser"
+    )
+    audio_generation_ui.add_argument("--port", type=int, default=8790)
+    audio_generation_ui.add_argument(
+        "--no-browser", action="store_true", help="do not open a browser window"
+    )
+    audio_generation_ui.set_defaults(run=_audio_generation_ui)
     return parser
 
 

@@ -37,7 +37,7 @@ saying something the sources do not say, and being hard to follow by ear.
 A podcast is recorded only when the overall score is at least 8, the flow at
 least 7, no episode below 6, and no claim is left unconfirmed. Otherwise the
 transcripts are kept, the reasons are written to `podcast.json`, `create` exits
-with `3`, and the studio says **Needs review**. A person can read the transcripts
+with `3`, and the audio generation UI says **Needs review**. A person can read the transcripts
 and record it anyway.
 
 ## Audio checks

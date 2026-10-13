@@ -17,8 +17,8 @@ the `ISA9000_CONFIG` environment variable works too.
 | `create -r REQUEST -s SOURCE...` | Creates a podcast. See below. |
 | `record FOLDER` | Records the episodes that have no audio yet. See below. |
 | `cover FOLDER` | Draws new cover art. |
-| `site [--serve] [--port N]` | Builds the website, and optionally previews it at `http://127.0.0.1:8800`. `--audio-kb` and `--output` override the folders. |
-| `ui [--port N] [--no-browser]` | Opens the [studio](ui.md). |
+| `presentation-website [--serve] [--port N]` | Builds the presentation website, and optionally previews it at `http://127.0.0.1:8800`. `--audio-kb` and `--output` override the folders. |
+| `audio-generation-ui [--port N] [--no-browser]` | Opens the [audio generation UI](audio-generation-ui.md). |
 
 ## create
 
@@ -47,7 +47,8 @@ isa9000 record "isa9000-audio_kb/2026-10-13 - Travel Policy" --episode 3   # one
 | `--force` | Record every episode again. |
 | `--chunked` | Record in parts of four paragraphs, for an episode that keeps failing its check. |
 
-After recording, rebuild the website: see [Website and publishing](publishing.md).
+After recording, rebuild the presentation website: see
+[Presentation website and publishing](publishing.md).
 
 ## Output
 
@@ -73,7 +74,7 @@ isa9000-audio_kb/
 
 `--progress json` prints one JSON object per line, for other tools:
 `{"stage": "write", "message": "Writing episode 2/5: ...", "current": 2, "total": 5}`.
-Stages: `check`, `read`, `plan`, `write`, `verify`, `review`, `record`, `site`,
+Stages: `check`, `read`, `plan`, `write`, `verify`, `review`, `record`, `presentation_website`,
 `done`, `error`. The line that starts a podcast also carries its `folder`.
 
 ## Python
@@ -81,14 +82,14 @@ Stages: `check`, `read`, `plan`, `write`, `verify`, `review`, `record`, `site`,
 ```python
 from isa9000 import create_podcast, load_config, record_podcast
 from isa9000.podcast import cover_podcast
-from isa9000.site import build_site
+from isa9000.presentation_website import build_presentation_website
 
 config = load_config("isa9000.toml")
 result = create_podcast("What changed in our travel policy?", ["./policies"], config=config)
 if not result.approved:
     print("Needs review:", result.notes)
 record_podcast(result.folder, config, episodes={2})  # one episode again
-build_site(config)
+build_presentation_website(config)
 ```
 
 | Function | Notes |
@@ -96,7 +97,7 @@ build_site(config)
 | `create_podcast(request, sources, config=None, podcasts=None, audio=True, progress=print, follow_links=False)` | Returns a `PodcastResult`: `title`, `folder`, `episodes`, `approved`, `notes`. |
 | `record_podcast(folder, config=None, progress=print, force=False, episodes=None, chunked=False)` | Returns a `PodcastResult`. |
 | `cover_podcast(folder, config=None, progress=print)` | Returns the cover's path. |
-| `build_site(config=None, podcasts=None, output=None, progress=print)` | Returns the website folder. |
+| `build_presentation_website(config=None, podcasts=None, output=None, progress=print)` | Returns the presentation website folder. |
 
 `progress` receives a `Step` with `stage`, `message`, `current`, `total` and
 `folder`, the same as `--progress json`. Errors: `ConfigError` (configuration

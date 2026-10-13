@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>isa9000 studio</title>
+<title>isa9000 audio generation UI</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/assets/vendor/bootstrap-icons.css">
 <link rel="stylesheet" href="/theme.css">
@@ -24,7 +24,7 @@
     <img class="mark on-light" src="/mark/on_light" alt="">
     <div>
       <div id="brandName">isa9000</div>
-      <div class="sub">Studio · Create recordings for your internal audio knowledge base</div>
+      <div class="sub">Audio generation UI · Create recordings for your internal audio knowledge base</div>
     </div>
   </div>
   <div class="head-right">
@@ -89,12 +89,12 @@
     </div>
 
     <div class="card">
-      <h2>Local website</h2>
-      <p class="hint">Builds the knowledge base website on this computer from every recorded podcast, so you can listen and check it before anyone else does. Nothing is uploaded. To make it available to others, download it and upload the files to your company's portal or storage, or ask IT to automate that step.</p>
+      <h2>Presentation website</h2>
+      <p class="hint">Builds the presentation website on this computer from every recorded podcast, so you can listen and check it before anyone else does. Nothing is uploaded. To make it available to others, download it and upload the files to your company's portal or storage, or ask IT to automate that step.</p>
       <div class="row-actions">
-        <button id="publish" class="ghost">Build the local website</button>
-        <a id="openSite" class="link-btn" href="/site/index.html" target="_blank" rel="noopener" hidden>Open it <i class="bi bi-box-arrow-up-right"></i></a>
-        <a id="downloadSite" class="link-btn" href="/api/site/download" hidden>Download it (ZIP) <i class="bi bi-download"></i></a>
+        <button id="publish" class="ghost">Build the presentation website</button>
+        <a id="openSite" class="link-btn" href="/presentation-website/index.html" target="_blank" rel="noopener" hidden>Open it <i class="bi bi-box-arrow-up-right"></i></a>
+        <a id="downloadSite" class="link-btn" href="/api/presentation-website/download" hidden>Download it (ZIP) <i class="bi bi-download"></i></a>
       </div>
       <p class="hint mono" id="siteStatus" style="margin:10px 0 0"></p>
     </div>
@@ -119,14 +119,14 @@ let lastJob = null;
 const openTranscripts = new Map();
 
 function tabTitle(job) {
-  if (!job || job.state === "idle") return `Studio · ${brand}`;
+  if (!job || job.state === "idle") return `Audio generation UI · ${brand}`;
   if (job.state === "running") {
     const active = job.steps.find((step) => step.status === "active");
-    return `● ${active ? active.label : "Working"} · Studio`;
+    return `● ${active ? active.label : "Working"} · Audio generation UI`;
   }
-  if (job.state === "done") return "✓ Ready · Studio";
-  if (job.state === "review") return "! Needs review · Studio";
-  return "✕ Stopped · Studio";
+  if (job.state === "done") return "✓ Ready · Audio generation UI";
+  if (job.state === "review") return "! Needs review · Audio generation UI";
+  return "✕ Stopped · Audio generation UI";
 }
 
 async function api(path, body) {
@@ -151,8 +151,8 @@ async function loadConfig() {
   brand = c.brand;
   document.title = tabTitle(lastJob);
   $("brandName").textContent = c.brand;
-  $("openSite").hidden = !c.site_ready;
-  $("downloadSite").hidden = !c.site_ready;
+  $("openSite").hidden = !c.presentation_website_ready;
+  $("downloadSite").hidden = !c.presentation_website_ready;
   const onBrand = c.accent_color && onBrandColor(c.accent_color);
   if (onBrand) {
     document.documentElement.style.setProperty("--brand", c.accent_color);
@@ -386,7 +386,7 @@ $("reset").onclick = async () => {
     await api("/api/reset", {});
   } catch (error) {
     $("error").hidden = false;
-    $("error").textContent = `Could not start over: ${error.message}. Restart the studio and try again.`;
+    $("error").textContent = `Could not start over: ${error.message}. Restart the audio generation UI and try again.`;
     return;
   }
   $("request").value = "";
@@ -418,10 +418,10 @@ $("dyslexicToggle").onclick = () => {
 };
 
 $("publish").onclick = async () => {
-  $("siteStatus").textContent = "Building the local website…";
+  $("siteStatus").textContent = "Building the presentation website…";
   $("publish").disabled = true;
   try {
-    const site = await api("/api/site", {});
+    const site = await api("/api/presentation-website", {});
     $("siteStatus").textContent = `Built on this computer: ${plural(site.podcasts, "podcast")}, ${plural(site.episodes, "episode")}. Folder: ${site.folder}`;
     $("openSite").hidden = false;
     $("downloadSite").hidden = false;

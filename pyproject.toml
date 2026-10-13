@@ -48,7 +48,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ui = [
+audio-generation-ui = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
 ]

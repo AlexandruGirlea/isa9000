@@ -527,19 +527,19 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+audio-generation-ui = [
+    { name = "fastapi" },
+    { name = "uvicorn" },
+]
 dev = [
     { name = "pytest" },
     { name = "ruff" },
-]
-ui = [
-    { name = "fastapi" },
-    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
-    { name = "fastapi", marker = "extra == 'ui'", specifier = ">=0.110" },
+    { name = "fastapi", marker = "extra == 'audio-generation-ui'", specifier = ">=0.110" },
     { name = "google-genai", specifier = ">=1.67" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "lameenc", specifier = ">=1.7" },
@@ -548,9 +548,9 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "requests", specifier = ">=2.31" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.17.0" },
-    { name = "uvicorn", marker = "extra == 'ui'", specifier = ">=0.29" },
+    { name = "uvicorn", marker = "extra == 'audio-generation-ui'", specifier = ">=0.29" },
 ]
-provides-extras = ["dev", "ui"]
+provides-extras = ["audio-generation-ui", "dev"]
 
 [[package]]
 name = "jinja2"

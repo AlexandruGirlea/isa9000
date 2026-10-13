@@ -91,8 +91,8 @@ class OutputSettings(_Settings):
     fact_check: bool = True
 
 
-class SiteSettings(_Settings):
-    folder: str = "isa9000-site"
+class PresentationWebsiteSettings(_Settings):
+    folder: str = "isa9000-presentation_website"
     base_url: str = ""
     title: str = ""
     heading: str = "Internal Audio Knowledge Base"
@@ -105,7 +105,9 @@ class Config(_Settings):
     narrator: NarratorSettings = Field(default_factory=NarratorSettings)
     branding: BrandingSettings = Field(default_factory=BrandingSettings)
     output: OutputSettings = Field(default_factory=OutputSettings)
-    site: SiteSettings = Field(default_factory=SiteSettings)
+    presentation_website: PresentationWebsiteSettings = Field(
+        default_factory=PresentationWebsiteSettings
+    )
     path: Path | None = None
 
     def resolve(self, value: str) -> Path:
@@ -123,8 +125,8 @@ class Config(_Settings):
         return self.resolve(self.output.folder)
 
     @property
-    def site_folder(self) -> Path:
-        return self.resolve(self.site.folder)
+    def presentation_website_folder(self) -> Path:
+        return self.resolve(self.presentation_website.folder)
 
 
 def find_config(explicit: str | Path | None = None) -> Path | None:

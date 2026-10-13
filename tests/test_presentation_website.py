@@ -8,7 +8,7 @@ import urllib.request
 import pytest
 
 from isa9000.config import Config
-from isa9000.site import _Preview, _source, build_site
+from isa9000.presentation_website import _Preview, _source, build_presentation_website
 from isa9000.voice import to_mp3
 
 
@@ -43,9 +43,11 @@ def library(tmp_path):
     return folder.parent
 
 
-def test_site_lists_podcasts_without_local_paths(library, tmp_path):
-    config = Config(site={"base_url": "https://audio.example.com/"})
-    site = build_site(config, podcasts=library, output=tmp_path / "site", progress=quiet)
+def test_presentation_website_lists_podcasts_without_local_paths(library, tmp_path):
+    config = Config(presentation_website={"base_url": "https://audio.example.com/"})
+    site = build_presentation_website(
+        config, podcasts=library, output=tmp_path / "site", progress=quiet
+    )
     page = (site / "audio_kb" / "2026-10-13-expense-policy.html").read_text()
     assert 'data-tag="Finance"' in (site / "index.html").read_text()
     assert "expenses.pdf" in page and "/private/policies" not in page
@@ -64,17 +66,21 @@ def test_similar_podcast_names_get_their_own_pages(library, tmp_path):
     shutil.copytree(
         library / "2026-10-13 - Expense Policy", library / "2026-10-13 - Expense Policy!"
     )
-    site = build_site(Config(), podcasts=library, output=tmp_path / "site", progress=quiet)
+    site = build_presentation_website(
+        Config(), podcasts=library, output=tmp_path / "site", progress=quiet
+    )
     assert sorted(page.name for page in (site / "audio_kb").glob("*.html")) == [
         "2026-10-13-expense-policy-2.html",
         "2026-10-13-expense-policy.html",
     ]
 
 
-def test_removed_podcasts_leave_the_site(library, tmp_path):
-    site = build_site(Config(), podcasts=library, output=tmp_path / "site", progress=quiet)
+def test_removed_podcasts_leave_the_presentation_website(library, tmp_path):
+    site = build_presentation_website(
+        Config(), podcasts=library, output=tmp_path / "site", progress=quiet
+    )
     shutil.rmtree(library / "2026-10-13 - Expense Policy")
-    build_site(Config(), podcasts=library, output=site, progress=quiet)
+    build_presentation_website(Config(), podcasts=library, output=site, progress=quiet)
     assert not list((site / "audio_kb").iterdir())
 
 
@@ -82,7 +88,9 @@ def test_unrelated_folder_is_refused(library, tmp_path):
     (tmp_path / "site").mkdir()
     (tmp_path / "site" / "notes.txt").write_text("mine")
     with pytest.raises(ValueError, match="not created by isa9000"):
-        build_site(Config(), podcasts=library, output=tmp_path / "site", progress=quiet)
+        build_presentation_website(
+            Config(), podcasts=library, output=tmp_path / "site", progress=quiet
+        )
 
 
 def test_preview_answers_byte_ranges(tmp_path):

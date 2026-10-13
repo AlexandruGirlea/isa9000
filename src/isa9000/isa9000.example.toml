@@ -47,7 +47,7 @@ greeting = "Hi, I'm {narrator}. This is {podcast}, episode {episode} of {episode
 ending = "That's it for this episode. Thanks for listening."
 final_ending = "That's the end of {podcast}. Thanks for listening."
 
-# Brand colour of the studio and the knowledge base website, and a logo (svg, png or jpg).
+# Brand colour of the audio generation UI and the presentation website, and a logo (svg, png or jpg).
 # Leave logo empty for the isa9000 logo.
 accent_color = "#6C3CE1"
 logo = ""
@@ -62,13 +62,13 @@ folder = "isa9000-audio_kb"
 # short of the quality gate is not recorded until someone reviews it.
 fact_check = true
 
-[site]
-# `isa9000 site` builds the knowledge base website from the audio knowledge base folder.
+[presentation_website]
+# `isa9000 presentation-website` builds the presentation website from the audio knowledge base folder.
 # Upload this folder to any static host or bucket inside your network.
-folder = "isa9000-site"
-# The address the site will be served from, for example
+folder = "isa9000-presentation_website"
+# The address the presentation website will be served from, for example
 # "https://podcasts.intranet.example.com/". Needed for the podcast feeds;
-# leave empty to build the site without feeds.
+# leave empty to build it without feeds.
 base_url = ""
 title = ""
 # The heading of the home page.

@@ -1,12 +1,12 @@
 # Third-party notices
 
-The listening site built by `isa9000 site` includes these files, unmodified, under their own licenses.
+The presentation website built by `isa9000 presentation-website` includes these files, unmodified, under their own licenses.
 
 | Component | Files | License |
 |---|---|---|
-| [Bootstrap](https://getbootstrap.com/) 5.3.0, Copyright 2011-2023 The Bootstrap Authors | `src/isa9000/site_static/vendor/bootstrap.min.css` | [MIT](https://github.com/twbs/bootstrap/blob/main/LICENSE) |
-| [Bootstrap Icons](https://icons.getbootstrap.com/) 1.11.3, Copyright 2019-2024 The Bootstrap Authors | `src/isa9000/site_static/vendor/bootstrap-icons.css`, `src/isa9000/site_static/vendor/fonts/` | [MIT](https://github.com/twbs/icons/blob/main/LICENSE) |
-| [OpenDyslexic](https://opendyslexic.org/), Copyright 2019 Abbie Gonzalez | `src/isa9000/site_static/fonts/OpenDyslexic-*.woff2` | [SIL Open Font License 1.1](src/isa9000/site_static/fonts/LICENSE.txt) |
+| [Bootstrap](https://getbootstrap.com/) 5.3.0, Copyright 2011-2023 The Bootstrap Authors | `src/isa9000/presentation_website_static/vendor/bootstrap.min.css` | [MIT](https://github.com/twbs/bootstrap/blob/main/LICENSE) |
+| [Bootstrap Icons](https://icons.getbootstrap.com/) 1.11.3, Copyright 2019-2024 The Bootstrap Authors | `src/isa9000/presentation_website_static/vendor/bootstrap-icons.css`, `src/isa9000/presentation_website_static/vendor/fonts/` | [MIT](https://github.com/twbs/icons/blob/main/LICENSE) |
+| [OpenDyslexic](https://opendyslexic.org/), Copyright 2019 Abbie Gonzalez | `src/isa9000/presentation_website_static/fonts/OpenDyslexic-*.woff2` | [SIL Open Font License 1.1](src/isa9000/presentation_website_static/fonts/LICENSE.txt) |
 
 ## MIT License (Bootstrap and Bootstrap Icons)
 

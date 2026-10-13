@@ -16,14 +16,14 @@ machine are treated as critical.
 
 Also in scope:
 
-- the studio answering anything but local requests, or accepting cross-site
-  writes;
+- the audio generation UI answering anything but local requests, or accepting
+  cross-site writes;
 - reading files outside the sources the user chose;
 - credentials from `isa9000.toml` appearing in logs, `podcast.json`, the
-  website or any other output;
-- local file paths appearing on the knowledge base website;
+  presentation website or any other output;
+- local file paths appearing on the presentation website;
 - script injection through source content, podcast titles or transcripts on the
-  website.
+  presentation website.
 
 ## Supported versions
 
