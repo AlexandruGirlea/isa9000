@@ -1,0 +1,76 @@
+# isa9000 configuration
+#
+# isa9000 looks for this file in this order:
+#   1. the path given with --config (or the ISA9000_CONFIG environment variable)
+#   2. ./isa9000.toml in the folder you run it from
+#   3. ~/.config/isa9000/config.toml
+# Relative paths in this file are resolved from the file's own folder.
+# Keep this file private: it can hold credentials.
+
+[google]
+# Option 1: a Gemini API key from https://aistudio.google.com/apikey
+# (or leave empty and set the GEMINI_API_KEY environment variable).
+api_key = ""
+
+# Option 2: Vertex AI on your own Google Cloud project. When project is set,
+# api_key is ignored. Credentials come from credentials_file (a service-account
+# JSON key) or, if that is empty, from `gcloud auth application-default login`.
+project = ""
+location = "global"
+credentials_file = ""
+
+[models]
+text = "gemini-3.1-pro-preview"
+speech = "gemini-2.5-pro-preview-tts"
+# Draws the cover art of every podcast.
+image = "gemini-3-pro-image"
+
+[narrator]
+name = "Isabela"
+# Any Gemini prebuilt voice. Alternatives to try: Sulafat, Aoede, Leda, Zephyr, Despina.
+voice = "Kore"
+style = "Read the script below like a professional podcaster, with a warm, engaging, and slightly energetic tone."
+
+# How to say names the voice gets wrong, such as product, team or people names.
+[narrator.pronunciations]
+# "Kubernetes" = "koo-ber-NET-eez"
+
+[branding]
+brand = "isa9000"
+# Shown in the browser app and recorded in each podcast's podcast.json.
+# Leave empty to remove it.
+powered_by = "Powered by girlea.ro"
+
+# Spoken at the start and end of every episode. Placeholders:
+#   {narrator} {brand} {podcast} {episode} {episodes} {title} {powered_by}
+greeting = "Hi, I'm {narrator}. This is {podcast}, episode {episode} of {episodes}: {title}."
+ending = "That's it for this episode. Thanks for listening."
+final_ending = "That's the end of {podcast}. Thanks for listening."
+
+# Brand colour of the studio and the knowledge base website, and a logo (svg, png or jpg).
+# Leave logo empty for the isa9000 logo.
+accent_color = "#6C3CE1"
+logo = ""
+
+[output]
+# Each podcast is saved as <folder>/<YYYY-MM-DD> - <Podcast title>/ with one mp3
+# and one transcript per episode, plus podcast.json.
+folder = "isa9000-audio_kb"
+# Check every claim in every episode against its sources, and fix what is wrong
+# (up to two rounds). Episodes are also scored as a listener would hear them, and
+# those below 9/10 are rewritten (up to three rounds). A podcast that still falls
+# short of the quality gate is not recorded until someone reviews it.
+fact_check = true
+
+[site]
+# `isa9000 site` builds the knowledge base website from the audio knowledge base folder.
+# Upload this folder to any static host or bucket inside your network.
+folder = "isa9000-site"
+# The address the site will be served from, for example
+# "https://podcasts.intranet.example.com/". Needed for the podcast feeds;
+# leave empty to build the site without feeds.
+base_url = ""
+title = ""
+# The heading of the home page.
+heading = "Internal Audio Knowledge Base"
+description = "AI-generated podcasts that keep the team up to date."

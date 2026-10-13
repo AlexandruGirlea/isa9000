@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Private planning notes
+GOALS.md
+.idea/
+
+# Packaging
+dist/
+build/
+*.egg-info/
+
+# Environments
+.venv/
+venv/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+
+# Local configuration can hold credentials
+isa9000.toml
+.env
+*.json.key
+service-account*.json
+
+# Generated audio knowledge base
+isa9000-audio_kb/
+
+# Generated listening site
+isa9000-site/

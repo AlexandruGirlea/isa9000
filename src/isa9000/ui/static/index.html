@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>isa9000 studio</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/assets/vendor/bootstrap-icons.css">
+<link rel="stylesheet" href="/theme.css">
+<script>
+(function () {
+  var theme = null, dyslexic = false;
+  try { theme = localStorage.getItem("isa9000_theme"); dyslexic = localStorage.getItem("isa9000_dyslexic") === "1"; } catch (e) {}
+  document.documentElement.dataset.theme = theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  if (dyslexic) document.documentElement.dataset.dyslexic = "1";
+})();
+</script>
+</head>
+<body>
+<div id="rule"></div>
+<header id="top">
+  <div id="brand">
+    <img class="mark on-dark" src="/mark/on_dark" alt="">
+    <img class="mark on-light" src="/mark/on_light" alt="">
+    <div>
+      <div id="brandName">isa9000</div>
+      <div class="sub">Studio · Create recordings for your internal audio knowledge base</div>
+    </div>
+  </div>
+  <div class="head-right">
+    <div id="narrator" class="chip"></div>
+    <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode"><i class="bi bi-sun"></i><i class="bi bi-moon"></i></button>
+    <button type="button" class="icon-btn" id="dyslexicToggle" aria-label="Toggle dyslexic font" title="Toggle dyslexic-friendly font"><i class="bi bi-type"></i></button>
+  </div>
+</header>
+<div id="problem" class="banner" hidden></div>
+
+<main>
+  <section class="col">
+    <div class="card">
+      <h2><span class="step">1</span>What should people get up to speed on?</h2>
+      <textarea id="request" rows="4" placeholder="For example: what changed in our cloud vendors this month, and what does it mean for my team?"></textarea>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">2</span>Sources</h2>
+      <p class="hint">Paste a link, or the path of a file or folder on this machine. A synced SharePoint, OneDrive or Google Drive folder works too. Each one is checked straight away.</p>
+      <form id="addForm" class="add">
+        <input id="source" placeholder="https://… or /path/to/folder" autocomplete="off">
+        <button type="submit" class="ghost">Add</button>
+      </form>
+      <ul id="sources"></ul>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">3</span>Create</h2>
+      <label class="toggle"><input type="checkbox" id="textOnly"> Transcripts first: review them, then record the audio</label>
+      <label class="toggle"><input type="checkbox" id="followLinks"> Also read pages linked from each web page (same section of the site, up to 25)</label>
+      <button id="create" class="primary" disabled>Create podcast</button>
+      <button id="reset" class="ghost wide" hidden><i class="bi bi-arrow-counterclockwise"></i> Start over</button>
+      <p class="hint" id="where" style="margin:10px 0 0"></p>
+    </div>
+  </section>
+
+  <section class="col">
+    <div class="card">
+      <div class="card-head">
+        <h2>Progress</h2>
+        <span id="elapsed" class="hint mono"></span>
+      </div>
+      <ol id="steps" class="steps"><li class="idle">Nothing running yet.</li></ol>
+      <p id="error" class="warn" hidden></p>
+      <div class="row-actions">
+        <button id="stop" class="ghost danger" hidden>Stop</button>
+        <button id="retry" class="ghost" hidden><i class="bi bi-arrow-clockwise"></i> Retry</button>
+      </div>
+      <details id="detailsBox" hidden>
+        <summary>Details</summary>
+        <pre id="log" class="console"></pre>
+      </details>
+    </div>
+
+    <div class="card" id="resultCard" hidden>
+      <h2 id="podcastTitle"></h2>
+      <p class="hint mono" id="folder"></p>
+      <div id="episodes"></div>
+      <button id="record" class="primary" hidden>Record audio</button>
+      <a id="downloadAll" class="button-link" href="/api/job/download" hidden><i class="bi bi-download"></i> Download all: audio, transcripts and cover (ZIP)</a>
+    </div>
+
+    <div class="card">
+      <h2>Local website</h2>
+      <p class="hint">Builds the knowledge base website on this computer from every recorded podcast, so you can listen and check it before anyone else does. Nothing is uploaded. To make it available to others, download it and upload the files to your company's portal or storage, or ask IT to automate that step.</p>
+      <div class="row-actions">
+        <button id="publish" class="ghost">Build the local website</button>
+        <a id="openSite" class="link-btn" href="/site/index.html" target="_blank" rel="noopener" hidden>Open it <i class="bi bi-box-arrow-up-right"></i></a>
+        <a id="downloadSite" class="link-btn" href="/api/site/download" hidden>Download it (ZIP) <i class="bi bi-download"></i></a>
+      </div>
+      <p class="hint mono" id="siteStatus" style="margin:10px 0 0"></p>
+    </div>
+  </section>
+</main>
+<footer id="footer"></footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const LABELS = {
+  reachable: "Reachable", folder: "Folder", file: "File", access_refused: "Access refused",
+  not_found: "Not found", error_page: "Error page", unreachable: "Unreachable",
+  missing: "Not found", empty: "Nothing to read", unsupported: "Unsupported",
+};
+const ICONS = { pending: "", active: "", done: "✓", failed: "✕", stopped: "■", skipped: "–" };
+const sources = [];
+let ready = false;
+let busy = false;
+let shownPodcast = "";
+let brand = "isa9000";
+let lastJob = null;
+const openTranscripts = new Map();
+
+function tabTitle(job) {
+  if (!job || job.state === "idle") return `Studio · ${brand}`;
+  if (job.state === "running") {
+    const active = job.steps.find((step) => step.status === "active");
+    return `● ${active ? active.label : "Working"} · Studio`;
+  }
+  if (job.state === "done") return "✓ Ready · Studio";
+  if (job.state === "review") return "! Needs review · Studio";
+  return "✕ Stopped · Studio";
+}
+
+async function api(path, body) {
+  const options = body === undefined ? {} : {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  };
+  const response = await fetch(path, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.detail || response.statusText);
+  return data;
+}
+
+function onBrandColor(hex) {
+  const value = hex.replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(value)) return null;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.55 ? "#0b0d17" : "#ffffff";
+}
+
+async function loadConfig() {
+  const c = await api("/api/config");
+  brand = c.brand;
+  document.title = tabTitle(lastJob);
+  $("brandName").textContent = c.brand;
+  $("openSite").hidden = !c.site_ready;
+  $("downloadSite").hidden = !c.site_ready;
+  const onBrand = c.accent_color && onBrandColor(c.accent_color);
+  if (onBrand) {
+    document.documentElement.style.setProperty("--brand", c.accent_color);
+    document.documentElement.style.setProperty("--on-brand", onBrand);
+  }
+  $("narrator").textContent = `Narrator: ${c.narrator}`;
+  $("footer").textContent = c.powered_by || "";
+  $("where").textContent = `Recordings are saved in ${c.output_folder}`;
+  if (c.problem) {
+    const where = c.config_file ? ` Config file: ${c.config_file}` : ' Run "isa9000 init" to create isa9000.toml.';
+    $("problem").textContent = c.problem + "." + where;
+    $("problem").hidden = false;
+  }
+  ready = !c.problem;
+  refresh();
+}
+
+function refresh() {
+  const allOk = sources.length > 0 && sources.every((s) => s.status && s.status.ok);
+  $("create").disabled = !(ready && allOk && $("request").value.trim() && !busy);
+  const hasWork = Boolean($("request").value.trim() || sources.length || !$("resultCard").hidden || $("steps").querySelector(".st"));
+  $("reset").hidden = !hasWork;
+  document.body.classList.toggle("busy", busy);
+}
+
+function renderSources() {
+  const list = $("sources");
+  list.innerHTML = "";
+  sources.forEach((s, index) => {
+    const item = document.createElement("li");
+    item.className = s.status ? (s.status.ok ? "ok" : "bad") : "";
+    item.innerHTML = '<span class="dot"></span><span class="src"></span><span class="tag"></span><button class="x" title="Remove">×</button>';
+    item.querySelector(".src").textContent = s.value;
+    let label = "Checking…";
+    if (s.status) {
+      label = LABELS[s.status.status] || s.status.status;
+      if (s.status.detail) label += ` · ${s.status.detail}`;
+    }
+    item.querySelector(".tag").textContent = label;
+    item.querySelector(".x").onclick = () => { sources.splice(index, 1); renderSources(); };
+    list.appendChild(item);
+  });
+  refresh();
+}
+
+async function addSource(value) {
+  if (!value || sources.some((s) => s.value === value)) return;
+  const entry = { value, status: null };
+  sources.push(entry);
+  renderSources();
+  try {
+    entry.status = await api("/api/check", { source: value });
+  } catch (error) {
+    entry.status = { ok: false, status: "unreachable", detail: error.message };
+  }
+  renderSources();
+}
+
+$("addForm").onsubmit = (event) => {
+  event.preventDefault();
+  const value = $("source").value.trim();
+  $("source").value = "";
+  addSource(value);
+};
+$("source").addEventListener("paste", (event) => {
+  const text = (event.clipboardData || window.clipboardData).getData("text");
+  const lines = text.split(/\s*\n\s*/).filter(Boolean);
+  if (lines.length > 1) {
+    event.preventDefault();
+    lines.forEach(addSource);
+  }
+});
+$("request").addEventListener("input", refresh);
+
+function plural(count, word) {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+function problemText(job) {
+  if (job.state === "review" && job.podcast) {
+    return `Needs review: ${job.podcast.notes.join("; ")}. Read the transcripts; if they are right, record the audio anyway.`;
+  }
+  return job.error ? `Stopped: ${job.error}` : "";
+}
+
+function clock(seconds) {
+  const m = Math.floor(seconds / 60);
+  return `${m}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function renderSteps(job) {
+  const list = $("steps");
+  if (!job.steps.length) {
+    list.innerHTML = '<li class="idle">Nothing running yet.</li>';
+    return;
+  }
+  list.innerHTML = "";
+  job.steps.forEach((step) => {
+    const item = document.createElement("li");
+    item.className = `st ${step.status}`;
+    item.innerHTML = '<span class="ic"></span><span class="lb"></span><span class="dt"></span>';
+    item.querySelector(".ic").textContent = ICONS[step.status] || "";
+    item.querySelector(".lb").textContent = step.label;
+    item.querySelector(".dt").textContent = step.status === "skipped" ? "Later" : step.detail;
+    list.appendChild(item);
+  });
+}
+
+function transcriptBox(folder, number) {
+  const key = `${folder}#${number}`;
+  const box = document.createElement("details");
+  box.className = "transcript";
+  box.innerHTML = '<summary>Transcript</summary><div class="transcript-text">Loading…</div>';
+  const text = box.querySelector(".transcript-text");
+  box.ontoggle = async () => {
+    if (!box.open) { openTranscripts.delete(key); return; }
+    if (openTranscripts.has(key)) return;
+    try {
+      const response = await fetch(`/api/job/episodes/${number}/transcript`);
+      if (!response.ok) throw new Error(response.statusText);
+      text.textContent = await response.text();
+      if (box.open) openTranscripts.set(key, text.textContent);
+    } catch (error) {
+      text.textContent = `Could not load the transcript: ${error.message}`;
+    }
+  };
+  if (openTranscripts.has(key)) {
+    text.textContent = openTranscripts.get(key);
+    box.open = true;
+  }
+  return box;
+}
+
+function showPodcast(podcast) {
+  if (!podcast) { $("resultCard").hidden = true; shownPodcast = ""; return; }
+  const signature = JSON.stringify(podcast);
+  if (signature === shownPodcast) return;
+  shownPodcast = signature;
+  $("resultCard").hidden = false;
+  $("podcastTitle").textContent = podcast.title;
+  $("folder").textContent = podcast.folder;
+  const box = $("episodes");
+  box.innerHTML = "";
+  let missingAudio = false;
+  const stamp = Date.now();
+  podcast.episodes.forEach((ep) => {
+    const row = document.createElement("div");
+    row.className = "ep";
+    row.innerHTML = '<div class="eph"><span class="num"></span><span class="t"></span><button type="button" class="mini rerecord" hidden>Re-record</button></div>';
+    row.querySelector(".num").textContent = String(ep.number).padStart(2, "0");
+    const minutes = ep.seconds ? ` · ${Math.max(1, Math.round(ep.seconds / 60))} min` : "";
+    row.querySelector(".t").textContent = ep.title + minutes;
+    if (ep.audio) {
+      const again = row.querySelector(".rerecord");
+      again.hidden = false;
+      again.title = `Record episode ${ep.number} again`;
+      again.onclick = () => run("/api/record", { episodes: [ep.number] });
+      const player = document.createElement("audio");
+      player.controls = true;
+      player.preload = "none";
+      player.src = `/api/job/episodes/${ep.number}/audio?v=${stamp}`;
+      row.appendChild(player);
+    } else {
+      missingAudio = true;
+    }
+    ep.unverified.forEach((problem) => {
+      const warning = document.createElement("p");
+      warning.className = "warn";
+      warning.textContent = `Check: ${problem}`;
+      row.appendChild(warning);
+    });
+    if (ep.audio_note) {
+      const note = document.createElement("p");
+      note.className = "warn";
+      note.textContent = `Listen to check: ${ep.audio_note}`;
+      row.appendChild(note);
+    }
+    row.appendChild(transcriptBox(podcast.folder, ep.number));
+    box.appendChild(row);
+  });
+  $("record").dataset.missing = missingAudio ? "1" : "";
+}
+
+async function poll() {
+  let job;
+  try { job = await api("/api/job"); } catch (error) { setTimeout(poll, 3000); return; }
+  busy = job.state === "running";
+  renderSteps(job);
+  lastJob = job;
+  document.title = tabTitle(job);
+  $("elapsed").textContent = job.elapsed ? clock(job.elapsed) : "";
+  $("error").textContent = problemText(job);
+  $("error").hidden = !$("error").textContent;
+  $("stop").hidden = !busy;
+  $("detailsBox").hidden = !job.log.length;
+  $("log").textContent = job.log.join("\n");
+  showPodcast(job.podcast);
+  $("record").hidden = busy || !$("record").dataset.missing;
+  $("downloadAll").hidden = busy || !job.podcast || Boolean($("record").dataset.missing);
+  $("retry").hidden = busy || !["failed", "stopped"].includes(job.state);
+  refresh();
+  if (busy) setTimeout(poll, 1500);
+}
+
+async function run(path, body) {
+  try {
+    await api(path, body);
+    busy = true;
+    $("record").hidden = true;
+    $("retry").hidden = true;
+    $("downloadAll").hidden = true;
+    refresh();
+    poll();
+  } catch (error) {
+    $("error").hidden = false;
+    $("error").textContent = error.message;
+  }
+}
+
+$("create").onclick = () => run("/api/podcasts", {
+  request: $("request").value,
+  sources: sources.map((s) => s.value),
+  text_only: $("textOnly").checked,
+  follow_links: $("followLinks").checked,
+});
+$("record").onclick = () => run("/api/record", {});
+$("retry").onclick = () => run("/api/retry", {});
+$("reset").onclick = async () => {
+  if (busy && !confirm("Stop the current run and start over?")) return;
+  try {
+    await api("/api/reset", {});
+  } catch (error) {
+    $("error").hidden = false;
+    $("error").textContent = `Could not start over: ${error.message}. Restart the studio and try again.`;
+    return;
+  }
+  $("request").value = "";
+  $("source").value = "";
+  sources.splice(0, sources.length);
+  renderSources();
+  $("textOnly").checked = false;
+  $("followLinks").checked = false;
+  shownPodcast = "";
+  $("resultCard").hidden = true;
+  await poll();
+  refresh();
+  $("request").focus();
+};
+$("stop").onclick = async () => { await api("/api/stop", {}).catch(() => {}); poll(); };
+
+$("themeToggle").onclick = () => {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("isa9000_theme", next); } catch (e) {}
+};
+$("dyslexicToggle").classList.toggle("active", document.documentElement.dataset.dyslexic === "1");
+$("dyslexicToggle").onclick = () => {
+  const on = document.documentElement.dataset.dyslexic !== "1";
+  if (on) document.documentElement.dataset.dyslexic = "1";
+  else delete document.documentElement.dataset.dyslexic;
+  $("dyslexicToggle").classList.toggle("active", on);
+  try { if (on) localStorage.setItem("isa9000_dyslexic", "1"); else localStorage.removeItem("isa9000_dyslexic"); } catch (e) {}
+};
+
+$("publish").onclick = async () => {
+  $("siteStatus").textContent = "Building the local website…";
+  $("publish").disabled = true;
+  try {
+    const site = await api("/api/site", {});
+    $("siteStatus").textContent = `Built on this computer: ${plural(site.podcasts, "podcast")}, ${plural(site.episodes, "episode")}. Folder: ${site.folder}`;
+    $("openSite").hidden = false;
+    $("downloadSite").hidden = false;
+  } catch (error) {
+    $("siteStatus").textContent = error.message;
+  }
+  $("publish").disabled = false;
+};
+
+loadConfig().catch((error) => {
+  $("problem").textContent = error.message;
+  $("problem").hidden = false;
+});
+poll();
+</script>
+</body>
+</html>

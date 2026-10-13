@@ -1,0 +1,27 @@
+version = 1
+SPDX-PackageName = "isa9000"
+SPDX-PackageSupplier = "girlea.ro"
+SPDX-PackageDownloadLocation = "https://github.com/AlexandruGirlea/isa9000"
+
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2026 girlea.ro"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "src/isa9000/site_static/vendor/bootstrap.min.css"
+SPDX-FileCopyrightText = "2011-2023 The Bootstrap Authors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = [
+  "src/isa9000/site_static/vendor/bootstrap-icons.css",
+  "src/isa9000/site_static/vendor/fonts/**",
+]
+SPDX-FileCopyrightText = "2019-2024 The Bootstrap Authors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "src/isa9000/site_static/fonts/**"
+SPDX-FileCopyrightText = "2019 Abbie Gonzalez"
+SPDX-License-Identifier = "OFL-1.1"

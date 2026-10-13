@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -e ".[ui,dev]"
+      - run: ruff check .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[ui,dev]"
+      - run: pytest -q
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install build
+      - run: python -m build
+      - name: Install the wheel into a clean environment
+        run: |
+          python -m venv /tmp/wheelenv
+          /tmp/wheelenv/bin/pip install "$(ls dist/*.whl)[ui]"
+      # Runs outside the checkout so a broken wheel cannot fall back to ./src.
+      - name: Build an empty website from the installed wheel
+        working-directory: /tmp
+        run: |
+          /tmp/wheelenv/bin/isa9000 --version
+          /tmp/wheelenv/bin/isa9000 init /tmp/isa9000.toml
+          mkdir -p /tmp/audio_kb
+          /tmp/wheelenv/bin/isa9000 --config /tmp/isa9000.toml site --audio-kb /tmp/audio_kb --output /tmp/site
+          test -f /tmp/site/index.html -a -f /tmp/site/logo.png -a -f /tmp/site/vendor/bootstrap.min.css
+          /tmp/wheelenv/bin/python -c "import isa9000.ui.app as app; app.create_app('/tmp/isa9000.toml')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

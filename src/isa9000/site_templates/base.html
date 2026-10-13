@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="author" content="{{ site.brand }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% block meta %}
+    <meta name="description" content="{{ site.description }}">
+    <title>{{ site.title }}</title>
+    {% endblock %}
+
+    {% if site.feed %}
+    <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ base_path }}{{ site.feed }}">
+    {% endif %}
+    {% if site.logo %}
+    <link rel="icon" type="{{ site.logo_type }}" href="{{ base_path }}{{ site.logo }}">
+    <link rel="apple-touch-icon" href="{{ base_path }}{{ site.logo }}">
+    {% else %}
+    <link rel="icon" href="data:,">
+    {% endif %}
+    <link rel="manifest" href="{{ base_path }}manifest.webmanifest">
+    <meta name="theme-color" content="{{ site.color }}">
+    <meta name="apple-mobile-web-app-title" content="{{ site.title }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link href="{{ base_path }}vendor/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ base_path }}vendor/bootstrap-icons.css" rel="stylesheet">
+
+    <script>
+        (function() {
+            var dyslexic = localStorage.getItem('isa9000_dyslexic') === '1';
+            var saved = localStorage.getItem('isa9000_theme');
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', dyslexic ? 'dark' : (saved || (prefersDark ? 'dark' : 'light')));
+            if (dyslexic) document.documentElement.setAttribute('data-dyslexic', '1');
+        })();
+    </script>
+
+    <style>
+        :root {
+            --primary: #6C3CE1;
+            --primary-light: #8B5CF6;
+            --primary-dark: #5126b4;
+            --accent: #F59E0B;
+            --accent-dark: #d97706;
+            --dark: #1a1a2e;
+            --darker: #0f0f1a;
+            --gray-bg: #f8f9fc;
+            --text-muted-custom: #6b7280;
+
+            --bg: #ffffff;
+            --text: #333333;
+            --text-soft: #555555;
+            --card-bg: #ffffff;
+            --card-border: rgba(0,0,0,0.08);
+            --nav-scrolled-bg: rgba(255,255,255,0.97);
+            --nav-scrolled-text: #555555;
+            --shadow: 0 2px 20px rgba(0,0,0,0.08);
+        }
+
+        [data-theme="dark"] {
+            --bg: #1a1018;
+            --text: #f0e4d2;
+            --text-soft: #c9bca8;
+            --card-bg: #261628;
+            --card-border: rgba(255,220,180,0.08);
+            --nav-scrolled-bg: rgba(26,16,24,0.97);
+            --nav-scrolled-text: #d8c9b6;
+            --gray-bg: #1f1420;
+            --dark: #1a1018;
+            --text-muted-custom: #a8968a;
+            --shadow: 0 2px 20px rgba(0,0,0,0.5);
+            --primary-light: #c084d4;
+            color-scheme: dark;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        @font-face {
+            font-family: 'OpenDyslexic'; font-style: normal; font-weight: 400; font-display: swap;
+            src: url('{{ base_path }}fonts/OpenDyslexic-Regular.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'OpenDyslexic'; font-style: normal; font-weight: 700; font-display: swap;
+            src: url('{{ base_path }}fonts/OpenDyslexic-Bold.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'OpenDyslexic'; font-style: italic; font-weight: 400; font-display: swap;
+            src: url('{{ base_path }}fonts/OpenDyslexic-Italic.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'OpenDyslexic'; font-style: italic; font-weight: 700; font-display: swap;
+            src: url('{{ base_path }}fonts/OpenDyslexic-Bold-Italic.woff2') format('woff2');
+        }
+
+        [data-dyslexic="1"] body,
+        [data-dyslexic="1"] h1, [data-dyslexic="1"] h2, [data-dyslexic="1"] h3,
+        [data-dyslexic="1"] h4, [data-dyslexic="1"] h5, [data-dyslexic="1"] h6,
+        [data-dyslexic="1"] p, [data-dyslexic="1"] a, [data-dyslexic="1"] button,
+        [data-dyslexic="1"] .text-logo {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', system-ui, sans-serif !important;
+        }
+
+        .main-header { position: fixed; top: 0; left: 0; width: 100%; z-index: 100; transition: background 0.3s, box-shadow 0.3s; }
+        .main-header.scrolled { background: var(--nav-scrolled-bg); box-shadow: var(--shadow); }
+        .navbar { padding: 1rem 0; }
+        .text-logo { font-size: 1.4rem; font-weight: 700; color: var(--primary-light); text-decoration: none; transition: color 0.3s; }
+        .text-logo img { height: 32px; width: auto; margin-right: 8px; vertical-align: middle; }
+        .text-logo .mark-on-light,
+        .main-header.scrolled .text-logo .mark-on-dark,
+        [data-theme="dark"] .main-header.scrolled .text-logo .mark-on-light { display: none; }
+        .main-header.scrolled .text-logo .mark-on-light,
+        [data-theme="dark"] .main-header.scrolled .text-logo .mark-on-dark { display: inline; }
+        .main-header.scrolled .text-logo { color: var(--primary); }
+
+        .ui-toggles { display: inline-flex; gap: 6px; align-items: center; }
+        .ui-toggle-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.85); width: 36px; height: 36px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1rem; transition: all 0.25s; padding: 0;
+        }
+        .ui-toggle-btn:hover { background: rgba(255,255,255,0.18); color: #fff; transform: translateY(-1px); }
+        .main-header.scrolled .ui-toggle-btn {
+            background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: var(--nav-scrolled-text);
+        }
+        [data-theme="dark"] .main-header.scrolled .ui-toggle-btn {
+            background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: var(--nav-scrolled-text);
+        }
+        .main-header.scrolled .ui-toggle-btn:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+        .ui-toggle-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .ui-toggle-btn .bi-moon { display: none; }
+        [data-theme="dark"] .ui-toggle-btn .bi-sun { display: none; }
+        [data-theme="dark"] .ui-toggle-btn .bi-moon { display: inline-block; }
+
+        .px-btn {
+            display: inline-block; padding: 12px 30px; border-radius: 50px; font-weight: 600;
+            text-decoration: none; transition: all 0.3s; font-size: 0.95rem;
+        }
+        .px-btn-theme { background: var(--primary); color: #fff; }
+        .px-btn-theme:hover { background: var(--primary-dark); color: #fff; transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--primary) 30%, transparent); }
+
+        .section { padding: 100px 0; background: var(--bg); color: var(--text); }
+        .section-heading h3 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); line-height: 1.4; }
+        .section-heading h3 span { display: inline-block; border-bottom: 3px solid var(--primary); padding-bottom: 8px; line-height: 1.3; }
+        [data-dyslexic="1"] .section-heading h3 { margin-bottom: 1.5rem; line-height: 1.6; }
+        [data-dyslexic="1"] .section-heading h3 span { padding-bottom: 12px; }
+        .bg-gray { background: var(--gray-bg); }
+        [data-theme="dark"] .text-muted { color: var(--text-muted-custom) !important; }
+
+        .footer { background: var(--darker); border-top: 1px solid rgba(255,255,255,0.08); padding: 20px 0; }
+        .footer p { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin: 0; }
+
+        @media (max-width: 991px) {
+            .section { padding: 70px 0; }
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+    {% if site.custom_color %}
+    <style>
+        :root {
+            --primary: {{ site.custom_color }};
+            --primary-light: color-mix(in srgb, {{ site.custom_color }} 70%, white);
+            --primary-dark: color-mix(in srgb, {{ site.custom_color }} 78%, black);
+        }
+        [data-theme="dark"] { --primary-light: color-mix(in srgb, {{ site.custom_color }} 55%, white); }
+    </style>
+    {% endif %}
+</head>
+
+<body>
+
+<header class="main-header {% block header_class %}{% endblock %}">
+    <nav class="navbar header-nav">
+        <div class="container">
+            <a class="navbar-brand" href="{{ nav_path | default(base_path) }}index.html" style="text-decoration: none;">
+                <span class="text-logo">{% if site.logo %}<img class="mark-on-dark" src="{{ base_path }}{{ site.marks.on_dark }}" alt=""><img class="mark-on-light" src="{{ base_path }}{{ site.marks.on_light }}" alt="">{% endif %}{{ site.title }}</span>
+            </a>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <div class="ui-toggles">
+                    <button type="button" class="ui-toggle-btn" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+                        <i class="bi bi-sun"></i><i class="bi bi-moon"></i>
+                    </button>
+                    <button type="button" class="ui-toggle-btn" id="dyslexic-toggle" aria-label="Toggle dyslexic font" title="Toggle dyslexic-friendly font">
+                        <i class="bi bi-type"></i>
+                    </button>
+                </div>
+                {% block nav_cta %}{% endblock %}
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="wrapper">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <div class="row align-items-center gy-2">
+            <div class="col-md-6 text-center text-md-start">
+                <p>&copy; <span id="current-year"></span> <strong>{{ site.brand }}</strong></p>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <p>{{ site.powered_by }}</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    (function() {
+        var root = document.documentElement;
+        var header = document.querySelector('.main-header');
+        var themeButton = document.getElementById('theme-toggle');
+        var fontButton = document.getElementById('dyslexic-toggle');
+
+        function onScroll() {
+            header.classList.toggle('scrolled', window.scrollY > 50 || header.classList.contains('solid'));
+        }
+        window.addEventListener('scroll', onScroll);
+        onScroll();
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        function setTheme(theme) {
+            root.setAttribute('data-theme', theme);
+            localStorage.setItem('isa9000_theme', theme);
+        }
+        function setDyslexic(on) {
+            fontButton.classList.toggle('active', on);
+            if (on) {
+                root.setAttribute('data-dyslexic', '1');
+                localStorage.setItem('isa9000_dyslexic', '1');
+                setTheme('dark');
+            } else {
+                root.removeAttribute('data-dyslexic');
+                localStorage.removeItem('isa9000_dyslexic');
+            }
+        }
+
+        fontButton.classList.toggle('active', root.getAttribute('data-dyslexic') === '1');
+        themeButton.addEventListener('click', function() {
+            var light = root.getAttribute('data-theme') === 'dark';
+            setTheme(light ? 'light' : 'dark');
+            if (light) setDyslexic(false);
+        });
+        fontButton.addEventListener('click', function() {
+            setDyslexic(root.getAttribute('data-dyslexic') !== '1');
+        });
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            if (!localStorage.getItem('isa9000_theme')) root.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        });
+    })();
+</script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

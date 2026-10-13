@@ -1,0 +1,70 @@
+// isa9000 palette, matching the knowledge base website and the studio.
+// Plain CSS rules only: applied after the theme, no theme internals.
+
+:root {
+  --c-primary: #6c3ce1;
+  --c-primary-deep: #5126b4;
+  --c-amber: #f59e0b;
+  --c-navy: #101e54;
+  --c-line: #e7e3f3;
+}
+
+.site-header {
+  border-bottom: 3px solid var(--c-primary);
+}
+
+.site-title {
+  color: var(--c-primary) !important;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.site-nav .nav-list .nav-list-item .nav-list-link {
+  &:hover {
+    background-image: linear-gradient(
+      -90deg,
+      rgba(108, 60, 225, 0.1) 0%,
+      rgba(108, 60, 225, 0.05) 80%,
+      transparent 100%
+    );
+  }
+
+  &.active {
+    color: var(--c-primary);
+    font-weight: 600;
+    background-image: linear-gradient(
+      -90deg,
+      rgba(245, 158, 11, 0.25) 0%,
+      rgba(245, 158, 11, 0.08) 80%,
+      transparent 100%
+    );
+  }
+}
+
+.main-content {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--c-navy);
+  }
+
+  h2 {
+    border-bottom: 1px solid var(--c-line);
+    padding-bottom: 0.3em;
+  }
+
+  a {
+    color: var(--c-primary);
+  }
+
+  a:hover {
+    color: var(--c-primary-deep);
+  }
+
+  img {
+    border-radius: 10px;
+  }
+}

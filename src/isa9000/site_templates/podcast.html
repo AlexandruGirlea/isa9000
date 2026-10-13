@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+
+{% block meta %}
+    <meta name="description" content="{{ podcast.description | truncate(155, True, '...') }}">
+    <title>{{ podcast.title }} - {{ site.title }}</title>
+{% endblock %}
+
+{% block extra_css %}
+        .podcast-hero {
+            background: linear-gradient(135deg, var(--darker) 0%, #16213e 50%, var(--dark) 100%);
+            padding: 120px 0 40px; color: #fff;
+        }
+        .podcast-hero h1 { font-size: 2.4rem; font-weight: 800; line-height: 1.2; }
+        .podcast-hero p { color: rgba(255,255,255,0.7); font-size: 1.05rem; line-height: 1.7; }
+        .podcast-cover { max-width: 280px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        .podcast-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.2rem; }
+        .podcast-meta .badge-item {
+            font-size: 0.8rem; font-weight: 600; padding: 5px 14px; border-radius: 50px;
+            background: color-mix(in srgb, var(--primary) 15%, transparent); color: var(--primary-light);
+            border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+        }
+        .podcast-meta .badge-accent {
+            background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent);
+            border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+        }
+        .podcast-sources { margin-top: 1rem; color: rgba(255,255,255,0.6); font-size: 0.85rem; }
+        .podcast-sources summary:hover { color: #fff; }
+        .podcast-sources ul { list-style: none; padding: 0; margin: 10px 0 0; }
+        .podcast-sources li { margin: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .podcast-sources a { color: rgba(255,255,255,0.75); text-decoration: none; }
+        .podcast-sources a:hover { color: #fff; text-decoration: underline; }
+        .back-link { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.9rem; margin-bottom: 1.5rem; display: inline-block; }
+        .back-link:hover { color: #fff; }
+
+        details > summary {
+            cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px;
+        }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary::after {
+            content: "\f282"; font-family: bootstrap-icons; font-size: 0.7rem; transition: transform 0.2s;
+        }
+        details[open] > summary::after { transform: rotate(180deg); }
+
+        .playlist-section {
+            background: linear-gradient(180deg, var(--dark) 0%, var(--gray-bg) 100%);
+            padding: 0 0 40px;
+        }
+        .playlist-panel {
+            background: #fff; border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.12); overflow: hidden;
+            margin-top: -30px; position: relative; z-index: 10;
+        }
+        .playlist-controls {
+            display: flex; align-items: center; gap: 16px; padding: 20px 24px;
+            border-bottom: 1px solid #f0f0f0; background: #fafbff;
+        }
+        .playlist-play-all {
+            width: 52px; height: 52px; border-radius: 50%; border: none;
+            background: var(--primary); color: #fff; font-size: 1.4rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+        }
+        .playlist-play-all:hover { background: var(--primary-dark); transform: scale(1.05); }
+        .playlist-play-all.playing { background: var(--accent); }
+        .playlist-play-all.playing:hover { background: var(--accent-dark); }
+        .playlist-now { flex: 1; min-width: 0; }
+        .playlist-now .now-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted-custom); font-weight: 600; }
+        .playlist-now .now-title { font-size: 1rem; font-weight: 700; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .playlist-progress { flex: 2; min-width: 120px; display: flex; align-items: center; gap: 10px; }
+        .playlist-progress .pbar { flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; cursor: pointer; }
+        .playlist-progress .pbar-fill {
+            height: 100%; background: var(--primary); border-radius: 3px;
+            transition: width 0.1s linear; width: 0%;
+        }
+        .playlist-progress .ptime { font-size: 0.75rem; color: var(--text-muted-custom); white-space: nowrap; }
+        .playlist-nav { display: flex; gap: 4px; flex-shrink: 0; }
+        .playlist-nav button {
+            background: none; border: 1px solid #e5e7eb; color: #555; width: 36px; height: 36px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1rem; transition: all 0.2s;
+        }
+        .playlist-nav button:hover { border-color: var(--primary); color: var(--primary); }
+        .playlist-nav .playlist-speed { min-width: 48px; padding: 0 10px; border-radius: 18px; font-size: 0.8rem; font-weight: 700; }
+        .playlist-speed.active { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, transparent); }
+
+        .playlist-tracks { max-height: 420px; overflow-y: auto; }
+        .playlist-track {
+            display: flex; align-items: center; gap: 12px; padding: 12px 24px;
+            border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.15s;
+        }
+        .playlist-track:last-child { border-bottom: none; }
+        .playlist-track:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+        .playlist-track.active { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+        .playlist-track .t-num {
+            width: 28px; text-align: center; font-size: 0.85rem; color: var(--text-muted-custom);
+            font-weight: 600; flex-shrink: 0;
+        }
+        .playlist-track.active .t-num { color: var(--primary); }
+        .playlist-track .t-play-icon { display: none; color: var(--primary); font-size: 1rem; }
+        .playlist-track:hover .t-num-text, .playlist-track.active .t-num-text { display: none; }
+        .playlist-track:hover .t-play-icon, .playlist-track.active .t-play-icon { display: inline; }
+        .playlist-track.active.is-playing .t-play-icon::before { content: "\F4C2"; }
+        .playlist-track .t-info { flex: 1; min-width: 0; }
+        .playlist-track .t-title { font-size: 0.9rem; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .playlist-track.active .t-title { color: var(--primary); }
+        .playlist-track .t-desc { font-size: 0.75rem; color: var(--text-muted-custom); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .playlist-track .t-duration { font-size: 0.8rem; color: var(--text-muted-custom); flex-shrink: 0; }
+
+        .episode-card {
+            background: #fff; border-radius: 12px; padding: 24px;
+            border: 1px solid #eee; margin-bottom: 16px;
+            transition: box-shadow 0.2s;
+        }
+        .episode-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .episode-card.playing { border-color: var(--primary); box-shadow: 0 4px 20px color-mix(in srgb, var(--primary) 12%, transparent); }
+        .ep-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .ep-number {
+            width: 36px; height: 36px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-weight: 700;
+            font-size: 0.85rem; flex-shrink: 0;
+            background: color-mix(in srgb, var(--primary) 8%, transparent); color: var(--primary);
+        }
+        .ep-title { font-weight: 700; font-size: 1.05rem; margin: 0; }
+        .ep-duration { font-size: 0.8rem; color: var(--text-muted-custom); margin-left: auto; white-space: nowrap; }
+        .ep-description { font-size: 0.9rem; color: var(--text-muted-custom); margin-bottom: 10px; }
+        .ep-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .ep-play-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--primary); color: #fff; border: none;
+            padding: 6px 16px; border-radius: 50px; font-size: 0.85rem;
+            font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .ep-play-btn:hover { background: var(--primary-dark); }
+        .ep-play-btn.pause { background: var(--accent); }
+        .ep-play-btn.pause:hover { background: var(--accent-dark); }
+        .ep-link {
+            display: inline-flex; align-items: center; gap: 4px;
+            color: var(--text-muted-custom); font-size: 0.8rem; text-decoration: none;
+            border: 1px solid #e5e7eb; padding: 5px 12px; border-radius: 50px;
+            transition: all 0.2s; background: none; font-family: inherit; cursor: pointer;
+        }
+        .ep-link:hover { border-color: var(--primary); color: var(--primary); }
+        .ep-transcript { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+        .ep-transcript summary { color: var(--primary); font-size: 0.85rem; font-weight: 600; }
+        .ep-transcript summary:hover { text-decoration: underline; }
+        .transcript-text { margin-top: 10px; font-size: 0.9rem; line-height: 1.8; color: #555; white-space: pre-line; }
+
+        .mini-player {
+            position: fixed; left: 50%; bottom: 16px; transform: translate(-50%, 160%);
+            width: min(720px, calc(100% - 24px)); display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; background: #fff; border-radius: 14px; z-index: 900;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.18); transition: transform 0.25s;
+        }
+        .mini-player.show { transform: translate(-50%, 0); }
+        .mini-toggle {
+            width: 40px; height: 40px; border-radius: 50%; border: none; flex-shrink: 0;
+            background: var(--primary); color: #fff; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .mini-toggle.playing { background: var(--accent); }
+        .mini-info { flex: 1; min-width: 0; }
+        .mini-title { font-size: 0.85rem; font-weight: 700; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mini-bar { height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 6px; cursor: pointer; }
+        .mini-fill { height: 100%; width: 0; background: var(--primary); border-radius: 2px; }
+        .mini-time { font-size: 0.75rem; color: var(--text-muted-custom); white-space: nowrap; }
+        .mini-up { color: var(--text-muted-custom); font-size: 1.1rem; padding: 4px; }
+        .mini-up:hover { color: var(--primary); }
+        body.has-mini { padding-bottom: 84px; }
+
+        .share-dialog {
+            border: none; border-radius: 16px; padding: 0; width: calc(100% - 40px); max-width: 520px;
+            background: #fff; color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        }
+        .share-dialog::backdrop { background: rgba(0,0,0,0.55); }
+        .share-dialog header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 22px 12px; border-bottom: 1px solid #f0f0f0;
+        }
+        .share-dialog h4 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+        .share-close { background: none; border: none; font-size: 1.5rem; color: #999; cursor: pointer; line-height: 1; padding: 0 4px; }
+        .share-close:hover { color: var(--text); }
+        .share-body { padding: 18px 22px 22px; }
+        .share-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--text-muted-custom); font-weight: 600; margin-bottom: 6px;
+        }
+        .share-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 16px; line-height: 1.4; }
+        .share-row { display: flex; gap: 8px; }
+        .share-row input {
+            flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #e5e7eb;
+            border-radius: 8px; font-size: 0.8rem; color: #555; background: #fafbff;
+            font-family: monospace;
+        }
+        .share-row input:focus { outline: none; border-color: var(--primary); }
+        .share-copy {
+            background: var(--primary); color: #fff; border: none;
+            padding: 10px 18px; border-radius: 8px; font-size: 0.85rem;
+            font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s;
+        }
+        .share-copy:hover { background: var(--primary-dark); }
+
+        .tap-to-play {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+            display: none; align-items: center; justify-content: center;
+            z-index: 10002; cursor: pointer; color: #fff; text-align: center;
+            animation: tapFade 0.25s ease-out; -webkit-tap-highlight-color: transparent;
+        }
+        .tap-to-play.open { display: flex; }
+        @keyframes tapFade { from { opacity: 0; } to { opacity: 1; } }
+        .tap-to-play-btn {
+            width: 110px; height: 110px; border-radius: 50%;
+            background: var(--primary); display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; margin: 0 auto 22px;
+            animation: tapPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes tapPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 10px 40px color-mix(in srgb, var(--primary) 50%, transparent); }
+            50% { transform: scale(1.08); box-shadow: 0 10px 50px color-mix(in srgb, var(--primary) 80%, transparent); }
+        }
+        .tap-to-play-msg { font-size: 1.35rem; font-weight: 700; margin-bottom: 8px; }
+        .tap-to-play-ep { font-size: 0.95rem; opacity: 0.75; line-height: 1.4; max-width: 360px; padding: 0 20px; }
+        .tap-to-play-hint { margin-top: 18px; font-size: 0.78rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.1em; }
+        .tap-to-play-close {
+            position: absolute; top: 16px; right: 16px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: #fff; width: 40px; height: 40px; border-radius: 50%;
+            font-size: 1.3rem; line-height: 1; display: flex; align-items: center; justify-content: center;
+        }
+        .tap-to-play-close:hover { background: rgba(255,255,255,0.18); }
+
+        @media (max-width: 767px) {
+            .podcast-hero h1 { font-size: 1.8rem; }
+            .podcast-cover { max-width: 200px; }
+            .playlist-controls { flex-wrap: wrap; gap: 12px; padding: 16px; }
+            .playlist-progress { min-width: 100%; order: 10; }
+            .playlist-track { padding: 10px 16px; }
+        }
+
+        [data-theme="dark"] .playlist-panel { background: var(--card-bg); box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+        [data-theme="dark"] .playlist-controls { background: rgba(255,220,180,0.03); border-bottom-color: var(--card-border); }
+        [data-theme="dark"] .playlist-now .now-title { color: var(--text); }
+        [data-theme="dark"] .playlist-progress .pbar { background: rgba(255,255,255,0.1); }
+        [data-theme="dark"] .playlist-nav button { border-color: var(--card-border); color: var(--text-soft); }
+        [data-theme="dark"] .playlist-nav button:hover,
+        [data-theme="dark"] .playlist-speed.active { color: var(--primary-light); border-color: var(--primary-light); }
+        [data-theme="dark"] .playlist-track { border-bottom-color: var(--card-border); }
+        [data-theme="dark"] .playlist-track:hover { background: color-mix(in srgb, var(--primary-light) 12%, transparent); }
+        [data-theme="dark"] .playlist-track.active { background: color-mix(in srgb, var(--primary-light) 10%, transparent); }
+        [data-theme="dark"] .playlist-track .t-title { color: var(--text); }
+        [data-theme="dark"] .playlist-track.active .t-title,
+        [data-theme="dark"] .playlist-track.active .t-num { color: var(--primary-light); }
+        [data-theme="dark"] .episode-card { background: var(--card-bg); border-color: var(--card-border); }
+        [data-theme="dark"] .ep-link { border-color: var(--card-border); }
+        [data-theme="dark"] .ep-link:hover { border-color: var(--primary-light); color: var(--primary-light); }
+        [data-theme="dark"] .ep-transcript { border-top-color: var(--card-border); }
+        [data-theme="dark"] .ep-transcript summary { color: var(--primary-light); }
+        [data-theme="dark"] .transcript-text { color: var(--text-soft); }
+        [data-theme="dark"] .mini-player { background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        [data-theme="dark"] .mini-title { color: var(--text); }
+        [data-theme="dark"] .mini-bar { background: rgba(255,255,255,0.1); }
+        [data-theme="dark"] .share-dialog { background: var(--card-bg); }
+        [data-theme="dark"] .share-dialog header { border-bottom-color: var(--card-border); }
+        [data-theme="dark"] .share-row input { background: rgba(255,255,255,0.04); border-color: var(--card-border); color: var(--text-soft); }
+{% endblock %}
+
+{% block nav_cta %}
+<a class="px-btn px-btn-theme d-none d-md-inline-block" href="#player">Play podcast</a>
+{% endblock %}
+
+{% block content %}
+    <section class="podcast-hero">
+        <div class="container">
+            <a href="{{ nav_path | default(base_path) }}index.html#catalog" class="back-link"><i class="bi bi-arrow-left"></i> All podcasts</a>
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="podcast-meta">
+                        <span class="badge-item badge-accent">{{ podcast.episode_count }} episode{{ '' if podcast.episode_count == 1 else 's' }}</span>
+                        {% if podcast.total_duration %}
+                        <span class="badge-item">{{ podcast.total_duration }}</span>
+                        {% endif %}
+                        {% if podcast.date_label %}
+                        <span class="badge-item">{{ podcast.date_label }}</span>
+                        {% endif %}
+                    </div>
+                    <h1>{{ podcast.title }}</h1>
+                    <p class="mt-3">{{ podcast.description }}</p>
+                    {% if podcast.sources %}
+                    <details class="podcast-sources">
+                        <summary><i class="bi bi-journal-text"></i> Based on {{ podcast.sources | length }} source{{ '' if podcast.sources | length == 1 else 's' }}</summary>
+                        <ul>
+                            {% for source in podcast.sources %}
+                            <li>{% if source.url %}<a href="{{ source.url }}" target="_blank" rel="noopener">{{ source.label }}</a>{% else %}{{ source.label }}{% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                    {% endif %}
+                    {% if podcast.feed %}
+                    <div class="mt-3"><a class="back-link mb-0" href="{{ podcast.feed_href }}"><i class="bi bi-rss"></i> Subscribe in a podcast app</a></div>
+                    {% endif %}
+                </div>
+                {% if podcast.cover_url %}
+                <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                    <img src="{{ podcast.cover_url }}" alt="{{ podcast.title }}" class="img-fluid rounded-3 podcast-cover">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section id="player" class="playlist-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <div class="playlist-panel">
+                        <div class="playlist-controls">
+                            <button type="button" class="playlist-play-all" id="play-all-btn" title="Play">
+                                <i class="bi bi-play-fill"></i>
+                            </button>
+                            <div class="playlist-now">
+                                <div class="now-label">Now Playing</div>
+                                <div class="now-title" id="player-title">Click play to start</div>
+                            </div>
+                            <div class="playlist-nav">
+                                <button type="button" id="prev-btn" title="Previous"><i class="bi bi-skip-backward-fill"></i></button>
+                                <button type="button" id="next-btn" title="Next"><i class="bi bi-skip-forward-fill"></i></button>
+                                <button type="button" class="playlist-speed" id="speed-btn" title="Playback speed (0.6× – 2×)">1×</button>
+                            </div>
+                            <div class="playlist-progress">
+                                <span class="ptime" id="player-current">0:00</span>
+                                <div class="pbar" id="progress-bar">
+                                    <div class="pbar-fill" id="progress-fill"></div>
+                                </div>
+                                <span class="ptime" id="player-duration">0:00</span>
+                            </div>
+                        </div>
+
+                        <div class="playlist-tracks">
+                            {% for ep in podcast.episodes %}
+                            <div class="playlist-track" data-audio="{{ ep.audio_url }}" data-number="{{ ep.number }}" data-title="{{ ep.title }}">
+                                <div class="t-num">
+                                    <span class="t-num-text">{{ ep.number }}</span>
+                                    <i class="bi bi-play-fill t-play-icon"></i>
+                                </div>
+                                <div class="t-info">
+                                    <div class="t-title">{{ ep.title }}</div>
+                                    <div class="t-desc">{{ ep.summary }}</div>
+                                </div>
+                                {% if ep.duration_label %}
+                                <span class="t-duration">{{ ep.duration_label }}</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="episodes" class="section bg-gray">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <div class="section-heading mb-4">
+                        <h3><span>Episodes</span></h3>
+                    </div>
+
+                    {% for ep in podcast.episodes %}
+                    <div class="episode-card" id="ep-{{ ep.number }}">
+                        <div class="ep-header">
+                            <div class="ep-number">{{ ep.number }}</div>
+                            <h4 class="ep-title">{{ ep.title }}</h4>
+                            {% if ep.duration_label %}
+                            <span class="ep-duration"><i class="bi bi-clock"></i> {{ ep.duration_label }}</span>
+                            {% endif %}
+                        </div>
+                        {% if ep.summary %}
+                        <p class="ep-description">{{ ep.summary }}</p>
+                        {% endif %}
+                        <div class="ep-controls">
+                            <button type="button" class="ep-play-btn">
+                                <i class="bi bi-play-fill"></i> <span>Play</span>
+                            </button>
+                            <a class="ep-link" href="{{ ep.audio_url }}" download="{{ ep.title }}.mp3">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                            <button type="button" class="ep-link ep-share" title="Share this episode">
+                                <i class="bi bi-share-fill"></i> Share
+                            </button>
+                        </div>
+                        {% if ep.text %}
+                        <details class="ep-transcript">
+                            <summary><i class="bi bi-file-text"></i> Transcript</summary>
+                            <div class="transcript-text">{{ ep.text }}</div>
+                        </details>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="mini-player" id="mini-player" inert>
+        <button type="button" class="mini-toggle" id="mini-toggle" aria-label="Play or pause"><i class="bi bi-play-fill"></i></button>
+        <div class="mini-info">
+            <div class="mini-title" id="mini-title"></div>
+            <div class="mini-bar" id="mini-bar"><div class="mini-fill" id="mini-fill"></div></div>
+        </div>
+        <span class="mini-time" id="mini-time">0:00</span>
+        <a class="mini-up" href="#player" aria-label="Show the full player"><i class="bi bi-chevron-up"></i></a>
+    </div>
+
+    <div class="tap-to-play" id="tap-to-play" role="dialog" aria-label="Tap to start playing">
+        <button type="button" class="tap-to-play-close" aria-label="Dismiss">&times;</button>
+        <div>
+            <div class="tap-to-play-btn"><i class="bi bi-play-fill"></i></div>
+            <div class="tap-to-play-msg">Tap to start playing</div>
+            <div class="tap-to-play-ep" id="tap-to-play-ep"></div>
+            <div class="tap-to-play-hint">Browsers block autoplay</div>
+        </div>
+    </div>
+
+    <dialog class="share-dialog" id="share-dialog" aria-labelledby="share-heading">
+        <form method="dialog">
+            <header>
+                <h4 id="share-heading">Share this episode</h4>
+                <button class="share-close" aria-label="Close">&times;</button>
+            </header>
+        </form>
+        <div class="share-body">
+            <div class="share-label">Episode</div>
+            <div class="share-title" id="share-title"></div>
+            <div class="share-row">
+                <input type="text" id="share-url" readonly>
+                <button type="button" class="share-copy" id="share-copy"></button>
+            </div>
+        </div>
+    </dialog>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var SPEEDS = [0.6, 0.8, 1, 1.5, 2];
+    var COPY = '<i class="bi bi-clipboard"></i> Copy link';
+    var podcastName = {{ podcast.title | tojson }};
+    var siteName = {{ site.title | tojson }};
+    var artwork = {{ (podcast.cover_url or ((base_path ~ site.logo) if site.logo else '')) | tojson }};
+
+    var audio = new Audio();
+    var current = null;
+    var speed = 1;
+    var panelVisible = true;
+    var playAll = document.getElementById('play-all-btn');
+    var nowTitle = document.getElementById('player-title');
+    var mini = document.getElementById('mini-player');
+    var miniToggle = document.getElementById('mini-toggle');
+    var speedButton = document.getElementById('speed-btn');
+    var tapToPlay = document.getElementById('tap-to-play');
+    var shareDialog = document.getElementById('share-dialog');
+    var shareUrl = document.getElementById('share-url');
+    var copyButton = document.getElementById('share-copy');
+
+    var episodes = Array.prototype.map.call(document.querySelectorAll('.playlist-track'), function(track) {
+        var number = Number(track.dataset.number);
+        return {
+            number: number,
+            title: track.dataset.title,
+            url: track.dataset.audio,
+            track: track,
+            card: document.getElementById('ep-' + number)
+        };
+    });
+
+    function label(episode) {
+        return 'Ep ' + episode.number + ': ' + episode.title;
+    }
+
+    function clock(seconds) {
+        var whole = Math.floor(seconds || 0);
+        return Math.floor(whole / 60) + ':' + String(whole % 60).padStart(2, '0');
+    }
+
+    function load(episode) {
+        current = episode;
+        audio.src = episode.url;
+        nowTitle.textContent = label(episode);
+        document.getElementById('mini-title').textContent = label(episode);
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: episode.title,
+                artist: siteName,
+                album: podcastName,
+                artwork: artwork ? [{ src: artwork }] : []
+            });
+        }
+    }
+
+    function play(episode) {
+        if (episode !== current) load(episode);
+        return audio.play();
+    }
+
+    function toggle(episode) {
+        if (episode === current && !audio.paused) audio.pause();
+        else play(episode);
+    }
+
+    function next() {
+        var index = episodes.indexOf(current);
+        if (index < episodes.length - 1) play(episodes[index + 1]);
+    }
+
+    function previous() {
+        if (!current) return;
+        var index = episodes.indexOf(current);
+        if (audio.currentTime > 3 || index === 0) audio.currentTime = 0;
+        else play(episodes[index - 1]);
+    }
+
+    function seek(event) {
+        var box = event.currentTarget.getBoundingClientRect();
+        if (audio.duration) audio.currentTime = (event.clientX - box.left) / box.width * audio.duration;
+    }
+
+    function setSpeed(value) {
+        speed = value;
+        audio.defaultPlaybackRate = value;
+        audio.playbackRate = value;
+        speedButton.textContent = value + '×';
+        speedButton.classList.toggle('active', value !== 1);
+        try { localStorage.setItem('isa9000_speed', String(value)); } catch (e) {}
+    }
+
+    function savedSpeed() {
+        try {
+            var value = Number(localStorage.getItem('isa9000_speed'));
+            return SPEEDS.indexOf(value) >= 0 ? value : 1;
+        } catch (e) {
+            return 1;
+        }
+    }
+
+    function syncMini() {
+        var show = current !== null && !panelVisible;
+        mini.classList.toggle('show', show);
+        mini.inert = !show;
+        document.body.classList.toggle('has-mini', show);
+    }
+
+    function render() {
+        var playing = !audio.paused;
+        var icon = playing ? 'bi bi-pause-fill' : 'bi bi-play-fill';
+        [playAll, miniToggle].forEach(function(button) {
+            button.classList.toggle('playing', playing);
+            button.querySelector('i').className = icon;
+        });
+        episodes.forEach(function(episode) {
+            var active = episode === current;
+            var pausable = active && playing;
+            var button = episode.card.querySelector('.ep-play-btn');
+            episode.track.classList.toggle('active', active);
+            episode.track.classList.toggle('is-playing', pausable);
+            episode.card.classList.toggle('playing', active);
+            button.classList.toggle('pause', pausable);
+            button.querySelector('i').className = pausable ? 'bi bi-pause-fill' : 'bi bi-play-fill';
+            button.querySelector('span').textContent = pausable ? 'Pause' : 'Play';
+        });
+        syncMini();
+    }
+
+    function link(episode) {
+        var url = new URL(window.location.href);
+        url.search = '?ep=' + episode.number;
+        url.hash = '';
+        return url.href;
+    }
+
+    function share(episode) {
+        document.getElementById('share-title').textContent = label(episode);
+        shareUrl.value = link(episode);
+        copyButton.innerHTML = COPY;
+        shareDialog.showModal();
+        shareUrl.focus();
+        shareUrl.select();
+    }
+
+    function copy() {
+        shareUrl.select();
+        var write = navigator.clipboard ? navigator.clipboard.writeText(shareUrl.value) : Promise.reject();
+        write.catch(function() {
+            if (!document.execCommand('copy')) throw new Error('copy failed');
+        }).then(function() {
+            copyButton.innerHTML = '<i class="bi bi-check2"></i> Copied';
+        }, function() {
+            copyButton.textContent = 'Copy the selected link';
+        });
+    }
+
+    function autoplay(episode) {
+        load(episode);
+        render();
+        episode.card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        audio.play().catch(function() {
+            document.getElementById('tap-to-play-ep').textContent = label(episode);
+            tapToPlay.classList.add('open');
+        });
+    }
+
+    episodes.forEach(function(episode) {
+        episode.track.addEventListener('click', function() { toggle(episode); });
+        episode.card.querySelector('.ep-play-btn').addEventListener('click', function() { toggle(episode); });
+        episode.card.querySelector('.ep-share').addEventListener('click', function() { share(episode); });
+    });
+    [playAll, miniToggle].forEach(function(button) {
+        button.addEventListener('click', function() { toggle(current || episodes[0]); });
+    });
+    document.getElementById('prev-btn').addEventListener('click', previous);
+    document.getElementById('next-btn').addEventListener('click', next);
+    document.getElementById('progress-bar').addEventListener('click', seek);
+    document.getElementById('mini-bar').addEventListener('click', seek);
+    speedButton.addEventListener('click', function() {
+        setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
+    });
+    copyButton.addEventListener('click', copy);
+    shareDialog.addEventListener('click', function(event) {
+        if (event.target === shareDialog) shareDialog.close();
+    });
+    tapToPlay.addEventListener('click', function(event) {
+        tapToPlay.classList.remove('open');
+        if (event.target.closest('.tap-to-play-close')) return;
+        load(current);
+        audio.play();
+    });
+
+    audio.addEventListener('play', render);
+    audio.addEventListener('pause', render);
+    audio.addEventListener('ended', next);
+    audio.addEventListener('timeupdate', function() {
+        if (!audio.duration) return;
+        var percent = audio.currentTime / audio.duration * 100 + '%';
+        document.getElementById('progress-fill').style.width = percent;
+        document.getElementById('mini-fill').style.width = percent;
+        document.getElementById('player-current').textContent = clock(audio.currentTime);
+        document.getElementById('player-duration').textContent = clock(audio.duration);
+        document.getElementById('mini-time').textContent = clock(audio.currentTime) + ' / ' + clock(audio.duration);
+    });
+
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('play', function() { audio.play(); });
+        navigator.mediaSession.setActionHandler('pause', function() { audio.pause(); });
+        navigator.mediaSession.setActionHandler('previoustrack', previous);
+        navigator.mediaSession.setActionHandler('nexttrack', next);
+    }
+
+    new IntersectionObserver(function(entries) {
+        panelVisible = entries[0].isIntersecting;
+        syncMini();
+    }).observe(document.querySelector('.playlist-panel'));
+
+    setSpeed(savedSpeed());
+
+    var params = new URLSearchParams(window.location.search);
+    var start = params.get('autoplay') === '1' ? episodes[0] : null;
+    if (params.has('ep')) {
+        start = episodes.find(function(episode) { return episode.number === Number(params.get('ep')); });
+    }
+    if (start) autoplay(start);
+})();
+</script>
+{% endblock %}

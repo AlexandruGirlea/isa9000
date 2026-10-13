@@ -1,0 +1,98 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "isa9000"
+dynamic = ["version"]
+description = "Turn your organization's documents into short, fact-checked podcasts. Self-hosted and white-label."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "LICENSES/*"]
+authors = [
+    { name = "Isabela and Alex @ girlea.ro" },
+]
+keywords = [
+    "corporate-podcast",
+    "podcast",
+    "text-to-speech",
+    "gemini",
+    "internal-communications",
+    "onboarding",
+    "summarization",
+    "white-label",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "google-genai>=1.67",
+    "jinja2>=3.1",
+    "lameenc>=1.7",
+    "pydantic>=2",
+    "pypdf>=4",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+ui = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff==0.17.0",
+]
+
+[project.urls]
+Homepage = "https://girlea.ro"
+Documentation = "https://alexandrugirlea.github.io/isa9000/"
+Repository = "https://github.com/AlexandruGirlea/isa9000"
+Issues = "https://github.com/AlexandruGirlea/isa9000/issues"
+Changelog = "https://github.com/AlexandruGirlea/isa9000/blob/main/CHANGELOG.md"
+Isabela = "https://isabela.girlea.ro"
+"Proof of work" = "https://devstories.eu"
+
+[project.scripts]
+isa9000 = "isa9000.cli:main"
+
+[tool.hatch.version]
+path = "src/isa9000/version.py"
+
+[tool.hatch.build]
+ignore-vcs = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/isa9000"]
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSES",
+    "REUSE.toml",
+    "pyproject.toml",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "C4", "UP", "RUF", "PLE", "PLW", "ERA"]
