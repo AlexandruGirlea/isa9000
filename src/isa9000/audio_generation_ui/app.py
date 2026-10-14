@@ -17,17 +17,23 @@ import zipfile
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from starlette.background import BackgroundTask
 
 from isa9000.config import (
+    CONFIG_NAME,
     DEFAULT_ICON,
     DEFAULT_MARKS,
+    DEFAULT_VOICES,
     LOGO_TYPES,
+    VOICES,
+    BrandingSettings,
     Config,
     ConfigError,
     credentials_problem,
     load_config,
+    replace_file,
+    update_config,
 )
 from isa9000.links import check_source
 from isa9000.podcast import MANIFEST, load_manifest, member
@@ -51,6 +57,11 @@ STAGE_ALIASES = {"verify": "write"}
 NEEDS_REVIEW = 3
 PRESENTATION_WEBSITE_TIMEOUT_S = 900
 STORED = {".mp3", ".jpg", ".jpeg", ".png", ".woff", ".woff2"}
+BRANDING_LABELS = {
+    "greeting": "Greeting",
+    "ending": "Ending",
+    "final_ending": "Ending of the last episode",
+}
 # The audio generation UI tab shows the logo with a "record" badge, so it never looks like
 # the presentation website tab.
 FAVICON = (
@@ -75,6 +86,20 @@ class PodcastIn(BaseModel):
     sources: list[str]
     text_only: bool = False
     follow_links: bool = False
+
+
+class TranscriptIn(BaseModel):
+    text: str
+
+
+class SettingsIn(BaseModel):
+    name: str
+    voice: str
+    greeting: str
+    ending: str
+    final_ending: str
+    pronunciations: dict[str, str]
+    quality: str
 
 
 def _command(config_path: str | None, *args: str) -> list[str]:
@@ -375,6 +400,57 @@ def create_app(config_path: str | None = None) -> FastAPI:
             "problem": credentials_problem(settings),
         }
 
+    @app.get("/api/settings")
+    def describe_settings() -> dict:
+        settings = config()
+        return {
+            "name": settings.narrator.name,
+            "voice": settings.narrator.voice,
+            "voices": VOICES[settings.provider],
+            "greeting": settings.branding.greeting,
+            "ending": settings.branding.ending,
+            "final_ending": settings.branding.final_ending,
+            "pronunciations": settings.narrator.pronunciations,
+            "quality": settings.output.quality,
+        }
+
+    @app.post("/api/settings")
+    def save_settings(body: SettingsIn) -> dict:
+        if not body.name.strip():
+            raise HTTPException(status_code=400, detail="add the narrator name")
+        settings = config()
+        narrator = {} if body.name == settings.narrator.name else {"name": body.name}
+        if body.voice != settings.narrator.voice:
+            narrator["voice"] = (
+                "" if body.voice == DEFAULT_VOICES[settings.provider] else body.voice
+            )
+        branding = {
+            key: getattr(body, key)
+            for key in ("greeting", "ending", "final_ending")
+            if getattr(body, key) != getattr(settings.branding, key)
+        }
+        try:
+            BrandingSettings(**branding)
+        except ValidationError as error:
+            problems = [
+                f"{BRANDING_LABELS[item['loc'][0]]}: {item['msg'].removeprefix('Value error, ')}"
+                for item in error.errors()
+            ]
+            raise HTTPException(status_code=400, detail="; ".join(problems)) from error
+        output = {} if body.quality == settings.output.quality else {"quality": body.quality}
+        pronunciations = body.pronunciations
+        if pronunciations == settings.narrator.pronunciations:
+            pronunciations = None
+        try:
+            update_config(
+                settings.path or pathlib.Path(CONFIG_NAME),
+                {"narrator": narrator, "branding": branding, "output": output},
+                pronunciations,
+            )
+        except (ConfigError, OSError, UnicodeError) as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        return {"saved": True}
+
     @app.post("/api/check")
     def check(body: SourceIn) -> dict:
         return check_source(body.source).to_dict()
@@ -440,6 +516,23 @@ def create_app(config_path: str | None = None) -> FastAPI:
             raise HTTPException(status_code=404)
         media = "audio/mpeg" if kind == "audio" else "text/plain; charset=utf-8"
         return FileResponse(path, media_type=media)
+
+    @app.post("/api/job/episodes/{number}/transcript")
+    def save_transcript(number: int, body: TranscriptIn) -> dict:
+        text = body.text.strip()
+        if not text:
+            raise HTTPException(status_code=400, detail="the transcript is empty")
+        with job.lock:
+            if job.state == "running":
+                raise HTTPException(status_code=409, detail="wait until the current run ends")
+            path = job.episode_file(number, "transcript")
+            if path is None:
+                raise HTTPException(status_code=404)
+            try:
+                replace_file(path, text + "\n")
+            except (OSError, UnicodeError) as error:
+                raise HTTPException(status_code=400, detail=str(error)) from error
+        return {"saved": True}
 
     @app.get("/api/job/download")
     def download_podcast() -> FileResponse:

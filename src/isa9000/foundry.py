@@ -13,7 +13,6 @@ from urllib3.util import Retry
 from isa9000.config import REQUEST_TIMEOUT_MS, RETRY_ATTEMPTS
 from isa9000.voice import SAMPLE_RATE, SpeechError
 
-REASONING = {"effort": "medium"}
 SPEECH_HEADERS = {
     "Content-Type": "application/ssml+xml",
     "X-Microsoft-OutputFormat": "raw-24khz-16bit-mono-pcm",
@@ -21,8 +20,9 @@ SPEECH_HEADERS = {
 
 
 class Foundry:
-    def __init__(self, client, endpoint: str, auth) -> None:
+    def __init__(self, client, endpoint: str, auth, reasoning_effort: str) -> None:
         self.client = client
+        self.reasoning = {"effort": reasoning_effort}
         self.speech_url = f"{endpoint.rstrip('/')}/tts/cognitiveservices/v1"
         self.auth = auth
         retry = Retry(
@@ -37,14 +37,14 @@ class Foundry:
 
     def structured(self, model: str, prompt: str, schema: type[BaseModel]):
         response = self.client.responses.parse(
-            model=model, input=prompt, text_format=schema, reasoning=REASONING
+            model=model, input=prompt, text_format=schema, reasoning=self.reasoning
         )
         if response.output_parsed is None:
             raise RuntimeError(f"{model} returned no usable answer: {response.output_text[:200]}")
         return response.output_parsed
 
     def text(self, model: str, prompt: str | list) -> str:
-        response = self.client.responses.create(model=model, input=prompt, reasoning=REASONING)
+        response = self.client.responses.create(model=model, input=prompt, reasoning=self.reasoning)
         return response.output_text
 
     def read_pdf(self, model: str, data: bytes, prompt: str) -> str:

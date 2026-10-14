@@ -50,7 +50,7 @@ transcribe = ""
 [narrator]
 name = "Isabela"
 # Empty uses "en-US-Serena" on Azure and "Kore" on Google. Others to try:
-# en-US-Ava or en-US-Emma on Azure; Sulafat, Aoede, Leda or Zephyr on Google.
+# en-US-Ava or en-US-Emma on Azure; Sulafat, Aoede, Leda, Zephyr or Despina on Google.
 voice = ""
 # Used by Gemini; Azure Speech voices take the tone from the script.
 style = "Read the script below like a professional podcaster, with a warm, engaging, and slightly energetic tone."
@@ -85,6 +85,10 @@ folder = "isa9000-audio_kb"
 # those below 9/10 are rewritten (up to three rounds). A podcast that still falls
 # short of the quality gate is not recorded until someone reviews it.
 fact_check = true
+# "standard" does the rounds above. "quick" does one fix round and one rewrite
+# round, "thorough" three and four. On Azure it also sets how much the text model
+# reasons: low, medium or high.
+quality = "standard"
 
 [presentation_website]
 # `isa9000 presentation-website` builds the presentation website from the audio knowledge base folder.
