@@ -27,7 +27,7 @@ def _say(args: argparse.Namespace, text: str) -> None:
 
 def _init(args: argparse.Namespace) -> int:
     path = write_template(args.path, force=args.force)
-    print(f"Wrote {path}. Add your Google credentials to it, then run: isa9000 audio-generation-ui")
+    print(f"Wrote {path}. Add your credentials to it, then run: isa9000 audio-generation-ui")
     if git_would_track(path):
         print(f"Warning: git would commit {path}. It can hold credentials: add it to .gitignore.")
     return 0

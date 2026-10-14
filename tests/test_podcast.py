@@ -13,7 +13,7 @@ def quiet(step):
 
 @pytest.fixture
 def config(tmp_path):
-    return Config(output={"folder": str(tmp_path / "audio_kb")})
+    return Config(provider="google", output={"folder": str(tmp_path / "audio_kb")})
 
 
 def test_approved_podcast_is_recorded(gemini, source, config):

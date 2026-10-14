@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from isa9000 import podcast, writer
+from isa9000.gemini import Gemini
 
 WORDS_PER_MINUTE = 150
 RATE = 24_000
@@ -108,7 +109,7 @@ class FakeGemini:
 @pytest.fixture
 def gemini(monkeypatch):
     fake = FakeGemini()
-    monkeypatch.setattr(podcast, "genai_client", lambda config: fake)
+    monkeypatch.setattr(podcast, "ai_client", lambda config: Gemini(fake))
     monkeypatch.setattr(podcast, "WORKERS", 1)
     return fake
 

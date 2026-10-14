@@ -18,7 +18,7 @@ aux_links:
     - "https://pypi.org/project/isa9000/"
 aux_links_new_tab: true
 
-footer_content: 'Apache-2.0. Developed by Isabela and Alex @ <a href="https://girlea.ro">girlea.ro</a>. Powered by the Gemini API.'
+footer_content: 'Apache-2.0. Developed by Isabela and Alex @ <a href="https://girlea.ro">girlea.ro</a>. Runs on Microsoft Azure or Google Cloud.'
 
 plugins:
   - jekyll-relative-links

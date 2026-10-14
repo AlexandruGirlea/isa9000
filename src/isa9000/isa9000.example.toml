@@ -7,6 +7,19 @@
 # Relative paths in this file are resolved from the file's own folder.
 # Keep this file private: it can hold credentials.
 
+# "azure" (Microsoft Foundry) or "google" (the Gemini API or Vertex AI).
+provider = "azure"
+
+[azure]
+# The endpoint of your Microsoft Foundry resource (not of a project), for example
+# "https://my-resource.openai.azure.com/" (or leave empty and set the
+# AZURE_OPENAI_ENDPOINT environment variable).
+endpoint = ""
+# An API key of the resource (or the AZURE_OPENAI_API_KEY environment variable).
+# Leave both empty to sign in with `az login`, as a user with the Foundry User
+# role on the resource.
+api_key = ""
+
 [google]
 # Option 1: a Gemini API key from https://aistudio.google.com/apikey
 # (or leave empty and set the GEMINI_API_KEY environment variable).
@@ -20,15 +33,26 @@ location = "global"
 credentials_file = ""
 
 [models]
-text = "gemini-3.1-pro-preview"
-speech = "gemini-2.5-pro-preview-tts"
+# Empty uses the default of your provider:
+#   azure:  text "gpt-6.1-sol", speech "MAI-Voice-2.1",
+#           image "gpt-image-2.5-sunburst", transcribe "gpt-transcribe"
+#   google: text "gemini-3.1-pro-preview", speech "gemini-2.5-pro-preview-tts",
+#           image "gemini-3-pro-image", transcribe with the text model
+# On Azure, text, image and transcribe are deployment names in your Foundry
+# resource: swap in newer models here as you deploy them.
+text = ""
+speech = ""
 # Draws the cover art of every podcast.
-image = "gemini-3-pro-image"
+image = ""
+# Checks each recording.
+transcribe = ""
 
 [narrator]
 name = "Isabela"
-# Any Gemini prebuilt voice. Alternatives to try: Sulafat, Aoede, Leda, Zephyr, Despina.
-voice = "Kore"
+# Empty uses "en-US-Olivia" on Azure and "Kore" on Google. Others to try:
+# en-US-Harper or en-US-Iris on Azure; Sulafat, Aoede, Leda or Zephyr on Google.
+voice = ""
+# Used by Gemini; Azure Speech voices take the tone from the script.
 style = "Read the script below like a professional podcaster, with a warm, engaging, and slightly energetic tone."
 
 # How to say names the voice gets wrong, such as product, team or people names.

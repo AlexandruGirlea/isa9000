@@ -45,19 +45,36 @@
 
 Developed by Isabela and Alex @ [girlea.ro](https://girlea.ro),
 from the engine behind [devstories.eu](https://devstories.eu) (more than 60 audio
-courses). **Powered by the [Gemini API](https://ai.google.dev/gemini-api/docs).**
+courses). **Runs on Microsoft Azure ([Microsoft Foundry](https://ai.azure.com)) or on
+Google Cloud (the [Gemini API](https://ai.google.dev/gemini-api/docs) or Vertex AI).**
 
 ## Quick start
 
 ```bash
 pip install "isa9000[audio-generation-ui]"
-isa9000 init                           # writes isa9000.toml: add a Gemini API key to it
+isa9000 init                           # writes isa9000.toml: add your Azure or Google credentials
 isa9000 audio-generation-ui            # create podcasts in your browser at http://127.0.0.1:8790
 isa9000 presentation-website --serve   # build the presentation website, preview it at http://127.0.0.1:8800
 ```
 
 Python 3.11 or newer, on Linux or macOS. Servers and CI only need
 `pip install isa9000`.
+
+## Azure and Google Cloud
+
+isa9000 runs on Microsoft Azure by default, or on Google Cloud. Choose one with
+`provider` in `isa9000.toml`.
+
+| | Microsoft Azure (default) | Google Cloud |
+|---|---|---|
+| Service | Microsoft Foundry | Gemini API or Vertex AI |
+| Sign in | API key or `az login` | API key, service account or `gcloud auth application-default login` |
+| Writing and fact-checking | GPT-6.1 Sol | Gemini 3.1 Pro |
+| Narration | Azure Speech MAI-Voice-2.1, voice Olivia | Gemini 2.5 Pro TTS, voice Kore |
+| Cover art | GPT Image 2.5 Sunburst | Gemini 3 Pro Image |
+
+To set up either one, see
+[Configuration](https://alexandrugirlea.github.io/isa9000/configuration.html).
 
 ## How it works
 
@@ -86,8 +103,8 @@ Everything listeners hear or see, from the narrator to the logo, is a setting.
 
 Only what the models need leaves your machine: your request, the content of
 your sources (PDFs are sent as files), the scripts to record and short clips of
-each recording for its check. It goes to the Google model endpoints you
-configure: the Gemini API, or Vertex AI in your own project. The presentation
+each recording for its check. It goes to the model endpoints you configure: the
+Gemini API, Vertex AI in your own project, or Microsoft Foundry. The presentation
 website is static files with no server code or tracking. Report vulnerabilities
 privately: see [SECURITY.md](https://github.com/AlexandruGirlea/isa9000/blob/main/SECURITY.md).
 

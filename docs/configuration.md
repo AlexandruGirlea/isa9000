@@ -10,6 +10,18 @@ setting and a comment for each. Relative paths are resolved from the file's
 folder. The file can hold credentials: keep it out of version control, or commit
 it without them.
 
+`provider` at the top of the file chooses the AI service: `"azure"` (the
+default: Microsoft Foundry) or `"google"` (the Gemini API or Vertex AI). A file
+without `provider` that sets Gemini models or `[google]` credentials, such as
+one written by isa9000 0.1, uses Google.
+
+## azure
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `endpoint` | `""` | The endpoint of your Microsoft Foundry resource (not of a project), for example `https://my-resource.openai.azure.com/`. Empty uses `AZURE_OPENAI_ENDPOINT`. |
+| `api_key` | `""` | An API key of the resource. Empty uses `AZURE_OPENAI_API_KEY`, or else `az login` with the Foundry User role on the resource. |
+
 ## google
 
 | Setting | Default | Meaning |
@@ -21,19 +33,25 @@ it without them.
 
 ## models
 
-| Setting | Default | Used for |
-|---|---|---|
-| `text` | `"gemini-3.1-pro-preview"` | Reading PDFs, planning, writing, checking |
-| `speech` | `"gemini-2.5-pro-preview-tts"` | Narration |
-| `image` | `"gemini-3-pro-image"` | Cover art |
+Empty settings use the default of your provider. On Azure, `text`, `image` and
+`transcribe` are the names of your deployments in the Foundry resource, and
+`speech` is an Azure Speech voice model. `text` must be a reasoning model, such
+as GPT-5 or newer. Swap in newer models here as you deploy them.
+
+| Setting | Azure default | Google default | Used for |
+|---|---|---|---|
+| `text` | `"gpt-6.1-sol"` | `"gemini-3.1-pro-preview"` | Reading PDFs, planning, writing, checking |
+| `speech` | `"MAI-Voice-2.1"` | `"gemini-2.5-pro-preview-tts"` | Narration |
+| `image` | `"gpt-image-2.5-sunburst"` | `"gemini-3-pro-image"` | Cover art |
+| `transcribe` | `"gpt-transcribe"` | The `text` model | Checking each recording |
 
 ## narrator
 
 | Setting | Default | Meaning |
 |---|---|---|
 | `name` | `"Isabela"` | The name in the greeting. |
-| `voice` | `"Kore"` | Any Gemini voice, for example Sulafat, Aoede, Leda or Zephyr. |
-| `style` | `"Read the script below like a professional podcaster, with a warm, engaging, and slightly energetic tone."` | How the voice reads. |
+| `voice` | `""` | Empty uses `"en-US-Olivia"` on Azure and `"Kore"` on Google. Others to try: en-US-Harper or en-US-Iris on Azure; Sulafat, Aoede, Leda or Zephyr on Google. |
+| `style` | `"Read the script below like a professional podcaster, with a warm, engaging, and slightly energetic tone."` | How the voice reads, on Gemini. Azure Speech voices take the tone from the script. |
 
 Names the voice gets wrong go in `[narrator.pronunciations]`:
 

@@ -13,7 +13,8 @@ nav_order: 1
 isa9000 turns your organization's documents and links into short, fact-checked
 podcasts and publishes them as a private audio knowledge base, inside your own
 network and with your own branding. It follows the production rules of
-[Dev Stories](https://devstories.eu).
+[Dev Stories](https://devstories.eu) and runs on Microsoft Azure (Microsoft
+Foundry) by default, or on Google Cloud (the Gemini API or Vertex AI).
 
 <p align="center">
   <img src="assets/img/presentation-website-home.png" alt="The Internal Audio Knowledge Base built by isa9000" width="900">
@@ -23,14 +24,15 @@ network and with your own branding. It follows the production rules of
 
 ```bash
 pip install "isa9000[audio-generation-ui]"
-isa9000 init                           # writes isa9000.toml: add a Gemini API key to it
+isa9000 init                           # writes isa9000.toml: add your Azure or Google credentials
 isa9000 audio-generation-ui            # create podcasts in your browser at http://127.0.0.1:8790
 isa9000 presentation-website --serve   # build the presentation website, preview it at http://127.0.0.1:8800
 ```
 
 Python 3.11 or newer, on Linux or macOS. No ffmpeg or other system tools.
-Servers and CI only need `pip install isa9000`. For Vertex AI and service
-accounts, see [Configuration](configuration.md#google).
+Servers and CI only need `pip install isa9000`. For Microsoft Foundry on Azure,
+see [Configuration](configuration.md#azure); for the Gemini API, Vertex AI and
+service accounts, see [Configuration](configuration.md#google).
 
 ## Ways to use it
 
@@ -48,8 +50,8 @@ is planned.
 
 Only what the models need: your request, the content of your sources (PDFs
 are sent as files), the scripts to record and short clips of each recording for
-its check. It goes to the Google model endpoints you configure: the Gemini API
-with your key, or Vertex AI in your own project. The
+its check. It goes to the model endpoints you configure: the Gemini API
+with your key, Vertex AI in your own project, or Microsoft Foundry. The
 presentation website is static files with no server code, analytics or tracking.
 
 Developed by [Isabela](https://isabela.girlea.ro) and Alex @

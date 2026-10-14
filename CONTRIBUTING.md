@@ -9,9 +9,9 @@ uv run ruff check .
 uv build
 ```
 
-Python 3.11 or newer, on Linux or macOS. Creating podcasts needs Google
+Python 3.11 or newer, on Linux or macOS. Creating podcasts needs Azure or Google
 credentials; see [docs/configuration.md](docs/configuration.md). The tests, linting and
-building do not: the tests use an offline stand-in for Gemini.
+building do not: the tests use offline stand-ins for Gemini and Azure.
 
 ## Pull requests
 

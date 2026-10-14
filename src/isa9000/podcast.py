@@ -10,7 +10,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 from isa9000.art import draw_cover
-from isa9000.config import GIT_IGNORE_ALL, Config, genai_client, load_config, render
+from isa9000.config import GIT_IGNORE_ALL, Config, ai_client, load_config, render
 from isa9000.links import SourceStatus, check_sources
 from isa9000.progress import Progress, Step
 from isa9000.sources import Source, load_sources, thin_pages
@@ -339,7 +339,7 @@ def create_podcast(
     failed = [status for status in check_sources(sources) if not status.ok]
     if failed:
         raise SourceError(failed)
-    client = genai_client(config)
+    client = ai_client(config)
     model = config.models.text
     loaded = _read(sources, client, model, progress, follow_links)
 
@@ -406,7 +406,7 @@ def cover_podcast(
     config = config or load_config()
     folder = Path(folder).expanduser()
     manifest = load_manifest(folder)
-    client = genai_client(config)
+    client = ai_client(config)
     concept = manifest.get("cover_concept") or suggest_cover(
         client, config.models.text, manifest["title"], manifest.get("description", "")
     )
@@ -446,11 +446,11 @@ def record_podcast(
             if force or not member(folder, entry["transcript"]).with_suffix(".mp3").exists()
         ]
     speaker = Speaker(
-        genai_client(config),
+        ai_client(config),
         config.models.speech,
         config.narrator.voice,
         config.narrator.style,
-        config.models.text,
+        config.models.transcribe,
         config.narrator.pronunciations,
     )
     lock = threading.Lock()
