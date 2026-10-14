@@ -30,7 +30,8 @@ saying something the sources do not say, and being hard to follow by ear.
 5. **Listener review.** Every episode is scored from 1 to 10 on clarity, mental
    model, pacing, density, honesty, conciseness, coherence, and its opening and
    closing; the series is scored on flow. Episodes below 9 are rewritten and
-   fact-checked again, for up to three rounds.
+   fact-checked again, for up to three rounds. These are the rounds of the
+   default `standard` quality; see [Configuration](configuration.md#output).
 
 ## The quality gate
 

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import json
 import os
+import re
+import shutil
 import string
 import subprocess
+import tempfile
 import tomllib
 from importlib.resources import files
 from pathlib import Path
@@ -37,7 +41,16 @@ DEFAULT_MODELS = {
         "image": "gemini-3-pro-image",
     },
 }
-DEFAULT_VOICES = {"azure": "en-US-Serena", "google": "Kore"}
+VOICES = {
+    "azure": ("en-US-Serena", "en-US-Ava", "en-US-Emma"),
+    "google": ("Kore", "Sulafat", "Aoede", "Leda", "Zephyr", "Despina"),
+}
+DEFAULT_VOICES = {provider: voices[0] for provider, voices in VOICES.items()}
+QUALITY = {
+    "quick": {"fact_check_rounds": 1, "review_rounds": 1, "reasoning_effort": "low"},
+    "standard": {"fact_check_rounds": 2, "review_rounds": 3, "reasoning_effort": "medium"},
+    "thorough": {"fact_check_rounds": 3, "review_rounds": 4, "reasoning_effort": "high"},
+}
 DEFAULT_COLOR = "#6C3CE1"
 LOGO_TYPES = {
     ".svg": "image/svg+xml",
@@ -45,6 +58,7 @@ LOGO_TYPES = {
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
 }
+HEADER = re.compile(r"\s*\[\s*([^\[\]]+?)\s*\]\s*(?:#.*)?")
 PLACEHOLDERS = ("narrator", "brand", "podcast", "episode", "episodes", "title", "powered_by")
 GIT_IGNORE_ALL = "# Created by isa9000: made from internal sources, so it stays out of git.\n*\n"
 REQUEST_TIMEOUT_MS = 600_000
@@ -114,6 +128,7 @@ class BrandingSettings(_Settings):
 class OutputSettings(_Settings):
     folder: str = "isa9000-audio_kb"
     fact_check: bool = True
+    quality: Literal["quick", "standard", "thorough"] = "standard"
 
 
 class PresentationWebsiteSettings(_Settings):
@@ -196,22 +211,26 @@ def find_config(explicit: str | Path | None = None) -> Path | None:
     return None
 
 
-def load_config(path: str | Path | None = None) -> Config:
-    found = find_config(path)
-    if found is None:
-        return Config()
+def _parse(text: str, path: Path) -> Config:
     try:
-        data = tomllib.loads(found.read_text(encoding="utf-8"))
+        data = tomllib.loads(text)
     except tomllib.TOMLDecodeError as error:
-        raise ConfigError(f"{found}: {error}") from error
+        raise ConfigError(f"{path}: {error}") from error
     data.pop("path", None)
     try:
-        return Config(**data, path=found.resolve())
+        return Config(**data, path=path.resolve())
     except ValidationError as error:
         problems = "; ".join(
             f"{'.'.join(map(str, item['loc']))}: {item['msg']}" for item in error.errors()
         )
-        raise ConfigError(f"{found}: {problems}") from error
+        raise ConfigError(f"{path}: {problems}") from error
+
+
+def load_config(path: str | Path | None = None) -> Config:
+    found = find_config(path)
+    if found is None:
+        return Config()
+    return _parse(found.read_text(encoding="utf-8"), found)
 
 
 def template() -> str:
@@ -225,6 +244,102 @@ def write_template(path: str | Path = CONFIG_NAME, force: bool = False) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(template(), encoding="utf-8")
     return target
+
+
+def _toml(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False).replace("\x7f", "\\u007f")
+
+
+def _section(line: str) -> str | None:
+    match = HEADER.fullmatch(line)
+    return re.sub(r"\s*\.\s*", ".", match[1]) if match else None
+
+
+def _table(data: dict, section: str) -> dict:
+    for name in section.split("."):
+        data = data.get(name, {})
+    return data
+
+
+def _key(line: str) -> str | None:
+    try:
+        return next(iter(tomllib.loads(line)), None)
+    except tomllib.TOMLDecodeError:
+        return None
+
+
+def _comment(line: str) -> str:
+    for match in re.finditer("#", line):
+        value = line[: match.start()]
+        if _key(value):
+            return line[len(value.rstrip()) :]
+    return ""
+
+
+def _set_section(
+    lines: list[str], section: str, entries: dict[str, str], replace: bool
+) -> list[str]:
+    sections = [_section(line) for line in lines]
+    if section not in sections:
+        lines, sections = [*lines, "", f"[{section}]"], [*sections, None, section]
+    start = sections.index(section) + 1
+    end = next(
+        (i for i in range(start, len(lines)) if lines[i].lstrip().startswith("[")), len(lines)
+    )
+    entries = dict(entries)
+    body = []
+    for line in lines[start:end]:
+        key = _key(line)
+        if key in entries:
+            body.append(entries.pop(key) + _comment(line))
+        elif not (replace and key):
+            body.append(line)
+    filled = max((i + 1 for i, line in enumerate(body) if line.strip()), default=0)
+    return [*lines[:start], *body[:filled], *entries.values(), *body[filled:], *lines[end:]]
+
+
+def replace_file(path: Path, text: str) -> None:
+    target = path.resolve()
+    data = text.encode("utf-8")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    handle, draft = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
+    with os.fdopen(handle, "wb") as file:
+        file.write(data)
+    if target.exists():
+        shutil.copymode(target, draft)
+    os.replace(draft, target)
+
+
+def update_config(
+    path: Path, settings: dict[str, dict[str, str]], pronunciations: dict[str, str] | None
+) -> None:
+    text = path.read_text(encoding="utf-8") if path.is_file() else template()
+    lines = text.rstrip("\n").split("\n") if text.strip() else []
+    for section, values in settings.items():
+        if values:
+            entries = {key: f"{key} = {_toml(value)}" for key, value in values.items()}
+            lines = _set_section(lines, section, entries, replace=False)
+    if pronunciations is not None:
+        entries = {
+            term: f"{_toml(term)} = {_toml(spoken)}" for term, spoken in pronunciations.items()
+        }
+        lines = _set_section(lines, "narrator.pronunciations", entries, replace=True)
+    text = "\n".join(lines) + "\n"
+    unsafe = f"{path}: could not save the settings safely; edit this file by hand"
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as error:
+        raise ConfigError(f"{unsafe} ({error})") from error
+    _parse(text, path)
+    wrong = any(
+        _table(data, section).get(key) != value
+        for section, values in settings.items()
+        for key, value in values.items()
+    )
+    table = _table(data, "narrator.pronunciations")
+    if wrong or (pronunciations is not None and pronunciations != table):
+        raise ConfigError(unsafe)
+    replace_file(path, text)
 
 
 def git_would_track(path: Path) -> bool:
@@ -296,15 +411,16 @@ def azure_client(config: Config):
         "timeout": REQUEST_TIMEOUT_MS / 1000,
         "max_retries": RETRY_ATTEMPTS,
     }
+    effort = QUALITY[config.output.quality]["reasoning_effort"]
     api_key = config.azure.api_key or os.environ.get(AZURE_KEY_ENV, "")
     if api_key:
         client = AzureOpenAI(api_key=api_key, **options)
-        return Foundry(client, endpoint, lambda: {"Ocp-Apim-Subscription-Key": api_key})
+        return Foundry(client, endpoint, lambda: {"Ocp-Apim-Subscription-Key": api_key}, effort)
     from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
     token = get_bearer_token_provider(DefaultAzureCredential(), AZURE_SCOPE)
     client = AzureOpenAI(azure_ad_token_provider=token, **options)
-    return Foundry(client, endpoint, lambda: {"Authorization": f"Bearer {token()}"})
+    return Foundry(client, endpoint, lambda: {"Authorization": f"Bearer {token()}"}, effort)
 
 
 def genai_client(config: Config):

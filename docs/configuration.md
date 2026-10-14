@@ -50,7 +50,7 @@ as GPT-5 or newer. Swap in newer models here as you deploy them.
 | Setting | Default | Meaning |
 |---|---|---|
 | `name` | `"Isabela"` | The name in the greeting. |
-| `voice` | `""` | Empty uses `"en-US-Serena"` on Azure and `"Kore"` on Google. Others to try: en-US-Ava or en-US-Emma on Azure; Sulafat, Aoede, Leda or Zephyr on Google. |
+| `voice` | `""` | Empty uses `"en-US-Serena"` on Azure and `"Kore"` on Google. Others to try: en-US-Ava or en-US-Emma on Azure; Sulafat, Aoede, Leda, Zephyr or Despina on Google. |
 | `style` | `"Read the script below like a professional podcaster, with a warm, engaging, and slightly energetic tone."` | How the voice reads, on Gemini. Azure Speech voices take the tone from the script. |
 
 Names the voice gets wrong go in `[narrator.pronunciations]`:
@@ -80,6 +80,7 @@ Greetings and endings can use `{narrator}`, `{brand}`, `{podcast}`, `{episode}`,
 |---|---|---|
 | `folder` | `"isa9000-audio_kb"` | Where podcasts are saved. |
 | `fact_check` | `true` | Check every claim against its sources. |
+| `quality` | `"standard"` | `"quick"`, `"standard"` or `"thorough"`: fix rounds after the fact-check (1, 2 or 3) and rewrite rounds for episodes below 9/10 (1, 3 or 4). On Azure it also sets how much the text model reasons (low, medium or high). |
 
 ## presentation_website
 

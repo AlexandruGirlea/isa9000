@@ -3,6 +3,16 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.3.0
+
+- The audio generation UI edits transcripts: correct an episode, press **Save
+  transcript**, then record it.
+- The audio generation UI sets the narrator's name and voice, the greeting and
+  endings, pronunciations and the quality, and saves them in `isa9000.toml`.
+- New `[output] quality` setting: `"quick"`, `"standard"` (the default, the same
+  as before) or `"thorough"`. It sets the fix and rewrite rounds and, on Azure,
+  how much the text model reasons. The target score stays 9.
+
 ## 0.2.0
 
 - Microsoft Foundry on Azure is now the default AI service: GPT-6.1 Sol writes
