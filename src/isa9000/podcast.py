@@ -10,7 +10,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 from isa9000.art import draw_cover
-from isa9000.config import GIT_IGNORE_ALL, Config, ai_client, load_config, render
+from isa9000.config import GIT_IGNORE_ALL, QUALITY, Config, ai_client, load_config, render
 from isa9000.links import SourceStatus, check_sources
 from isa9000.progress import Progress, Step
 from isa9000.sources import Source, load_sources, thin_pages
@@ -34,8 +34,6 @@ from isa9000.writer import (
 
 MANIFEST = "podcast.json"
 WORKERS = 5
-FACT_CHECK_ROUNDS = 2
-REVIEW_ROUNDS = 3
 
 
 class SourceError(RuntimeError):
@@ -73,6 +71,7 @@ class _Drafting:
     plan: PodcastPlan
     sources: list[Source]
     fact_check: bool
+    quality: str
     progress: Progress
 
 
@@ -181,7 +180,7 @@ def _fact_checked(work: _Drafting, index: int, body: str) -> tuple[str, list[str
     episode = work.plan.episodes[index]
     work.progress(Step("verify", f"Fact-checking episode {number}/{total}", number, total))
     problems = review_episode(work.client, work.model, body, work.sources, episode)
-    for _ in range(FACT_CHECK_ROUNDS):
+    for _ in range(QUALITY[work.quality]["fact_check_rounds"]):
         if not problems:
             break
         work.progress(
@@ -217,7 +216,8 @@ def _polish(work: _Drafting, bodies: list[str], unverified: list[list[str]]) -> 
     total = len(work.plan.episodes)
     work.progress(Step("review", "Reviewing the episodes as a listener would"))
     score = score_podcast(work.client, work.model, work.plan, bodies)
-    for round_number in range(1, REVIEW_ROUNDS + 1):
+    rounds = QUALITY[work.quality]["review_rounds"]
+    for round_number in range(1, rounds + 1):
         weak = [
             item
             for item in score.episodes
@@ -228,7 +228,7 @@ def _polish(work: _Drafting, bodies: list[str], unverified: list[list[str]]) -> 
         work.progress(
             Step(
                 "review",
-                f"Polishing {len(weak)} episode(s), round {round_number} of {REVIEW_ROUNDS}",
+                f"Polishing {len(weak)} episode(s), round {round_number} of {rounds}",
             )
         )
 
@@ -354,7 +354,9 @@ def create_podcast(
         Step("plan", f"Podcast: {plan.title} ({total} episodes)", total=total, folder=str(folder))
     )
 
-    work = _Drafting(client, model, plan, loaded, config.output.fact_check, progress)
+    work = _Drafting(
+        client, model, plan, loaded, config.output.fact_check, config.output.quality, progress
+    )
     with ThreadPoolExecutor(max_workers=1) as artist:
         progress(Step("write", "Drawing the cover art"))
         cover = artist.submit(_cover, client, config, plan, folder, progress)

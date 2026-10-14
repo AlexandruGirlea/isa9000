@@ -43,7 +43,7 @@ def azure(monkeypatch):
 
 def test_episode_is_recorded_and_checked(azure, tmp_path):
     speaker = Speaker(
-        Foundry(azure, "https://test/", dict), "MAI-Voice-2.1", "en-US-Olivia", "", "stt"
+        Foundry(azure, "https://test/", dict, "medium"), "MAI-Voice-2.1", "en-US-Olivia", "", "stt"
     )
     record_episode(speaker, SCRIPT, tmp_path / "episode.mp3")
     assert (tmp_path / "episode.mp3").exists()
@@ -52,7 +52,7 @@ def test_episode_is_recorded_and_checked(azure, tmp_path):
 
 def test_pronunciations_keep_the_ssml_valid(azure):
     pronunciations = {"Nginx": "engine x", "engine": "EN-jin", "AI": "A I"}
-    foundry = Foundry(azure, "https://test/", dict)
+    foundry = Foundry(azure, "https://test/", dict, "medium")
     foundry.speak("MAI-Voice-2.1", "en-US-Olivia", "", pronunciations, "Nginx & OpenAI, an engine.")
     subs = ET.fromstring(azure.ssml).iter("{http://www.w3.org/2001/10/synthesis}sub")
     assert [sub.get("alias") for sub in subs] == ["engine x", "EN-jin"]

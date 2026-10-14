@@ -30,6 +30,7 @@
   <div class="head-right">
     <div id="narrator" class="chip"></div>
     <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode"><i class="bi bi-sun"></i><i class="bi bi-moon"></i></button>
+    <button type="button" class="icon-btn" id="settingsButton" aria-label="Settings" title="Settings"><i class="bi bi-gear"></i></button>
     <button type="button" class="icon-btn" id="dyslexicToggle" aria-label="Toggle dyslexic font" title="Toggle dyslexic-friendly font"><i class="bi bi-type"></i></button>
   </div>
 </header>
@@ -100,6 +101,35 @@
     </div>
   </section>
 </main>
+<dialog class="card" id="settings">
+  <div class="card-head">
+    <h2>Settings</h2>
+    <button type="button" class="icon-btn" id="closeSettings" aria-label="Close" title="Close"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="dialog-body">
+    <p class="hint">Saved in your isa9000 settings file and used for the next podcast. The greeting and endings can use {narrator}, {brand}, {podcast}, {episode}, {episodes}, {title} and {powered_by}.</p>
+    <div class="fields">
+      <label>Narrator name<input id="narratorName"></label>
+      <label>Voice<select id="narratorVoice"></select></label>
+      <label>Greeting<input id="greeting"></label>
+      <label>Ending<input id="ending"></label>
+      <label>Ending of the last episode<input id="finalEnding"></label>
+      <label>Quality<select id="quality">
+        <option value="quick">Quick draft: fewer checks, faster and cheaper</option>
+        <option value="standard">Standard (recommended)</option>
+        <option value="thorough">Thorough: more checks, slower and more expensive</option>
+      </select></label>
+    </div>
+    <p class="hint">Names the narrator says wrong, and how to say them.</p>
+    <div id="pronunciations"></div>
+    <button type="button" class="mini" id="addPronunciation">Add a name</button>
+  </div>
+  <p class="warn" id="settingsStatus"></p>
+  <div class="row-actions dialog-actions">
+    <button type="button" class="ghost" id="cancelSettings">Cancel</button>
+    <button type="button" class="primary" id="saveSettings" disabled>Save</button>
+  </div>
+</dialog>
 <footer id="footer"></footer>
 
 <script>
@@ -261,26 +291,45 @@ function renderSteps(job) {
   });
 }
 
-function transcriptBox(folder, number) {
+function transcriptBox(folder, number, recorded) {
   const key = `${folder}#${number}`;
   const box = document.createElement("details");
   box.className = "transcript";
-  box.innerHTML = '<summary>Transcript</summary><div class="transcript-text">Loading…</div>';
-  const text = box.querySelector(".transcript-text");
+  box.innerHTML = '<summary>Transcript</summary><textarea class="transcript-text" placeholder="Loading…" readonly></textarea><div class="row-actions"><button type="button" class="mini" disabled>Save transcript</button><span class="hint"></span></div>';
+  const text = box.querySelector("textarea");
+  const save = box.querySelector("button");
+  const status = box.querySelector(".hint");
+  const loaded = (value) => {
+    text.value = value;
+    text.readOnly = false;
+    save.disabled = false;
+  };
+  text.oninput = () => { openTranscripts.set(key, text.value); status.textContent = ""; };
+  save.onclick = async () => {
+    save.disabled = true;
+    try {
+      await api(`/api/job/episodes/${number}/transcript`, { text: text.value });
+      status.textContent = recorded ? "Saved. Re-record the episode to use it." : "Saved.";
+    } catch (error) {
+      status.textContent = error.message;
+    }
+    save.disabled = false;
+  };
   box.ontoggle = async () => {
     if (!box.open) { openTranscripts.delete(key); return; }
+    if (!text.readOnly) { openTranscripts.set(key, text.value); return; }
     if (openTranscripts.has(key)) return;
     try {
       const response = await fetch(`/api/job/episodes/${number}/transcript`);
       if (!response.ok) throw new Error(response.statusText);
-      text.textContent = await response.text();
-      if (box.open) openTranscripts.set(key, text.textContent);
+      loaded(await response.text());
+      if (box.open) openTranscripts.set(key, text.value);
     } catch (error) {
-      text.textContent = `Could not load the transcript: ${error.message}`;
+      status.textContent = `Could not load the transcript: ${error.message}`;
     }
   };
   if (openTranscripts.has(key)) {
-    text.textContent = openTranscripts.get(key);
+    loaded(openTranscripts.get(key));
     box.open = true;
   }
   return box;
@@ -330,7 +379,7 @@ function showPodcast(podcast) {
       note.textContent = `Listen to check: ${ep.audio_note}`;
       row.appendChild(note);
     }
-    row.appendChild(transcriptBox(podcast.folder, ep.number));
+    row.appendChild(transcriptBox(podcast.folder, ep.number, ep.audio));
     box.appendChild(row);
   });
   $("record").dataset.missing = missingAudio ? "1" : "";
@@ -360,6 +409,7 @@ async function poll() {
 async function run(path, body) {
   try {
     await api(path, body);
+    openTranscripts.clear();
     busy = true;
     $("record").hidden = true;
     $("retry").hidden = true;
@@ -431,6 +481,64 @@ $("publish").onclick = async () => {
   $("publish").disabled = false;
 };
 
+function pronunciationRow(term = "", spoken = "") {
+  const row = document.createElement("div");
+  row.className = "pron";
+  row.innerHTML = '<input class="term" placeholder="Name as written"><input class="spoken" placeholder="How to say it"><button type="button" class="x" title="Remove">×</button>';
+  row.querySelector(".term").value = term;
+  row.querySelector(".spoken").value = spoken;
+  row.querySelector(".x").onclick = () => row.remove();
+  $("pronunciations").appendChild(row);
+}
+
+async function loadSettings() {
+  const s = await api("/api/settings");
+  $("narratorName").value = s.name;
+  $("narratorVoice").innerHTML = "";
+  new Set([s.voice, ...s.voices]).forEach((voice) => $("narratorVoice").add(new Option(voice.split("-").pop(), voice, false, voice === s.voice)));
+  $("quality").value = s.quality;
+  $("greeting").value = s.greeting;
+  $("ending").value = s.ending;
+  $("finalEnding").value = s.final_ending;
+  $("pronunciations").innerHTML = "";
+  Object.entries(s.pronunciations).forEach(([term, spoken]) => pronunciationRow(term, spoken));
+  $("saveSettings").disabled = false;
+}
+
+$("addPronunciation").onclick = () => pronunciationRow();
+$("saveSettings").onclick = async () => {
+  const pronunciations = {};
+  document.querySelectorAll("#pronunciations .pron").forEach((row) => {
+    const term = row.querySelector(".term").value.trim();
+    const spoken = row.querySelector(".spoken").value.trim();
+    if (term && spoken) pronunciations[term] = spoken;
+  });
+  $("saveSettings").disabled = true;
+  try {
+    await api("/api/settings", {
+      name: $("narratorName").value.trim(),
+      voice: $("narratorVoice").value,
+      greeting: $("greeting").value,
+      ending: $("ending").value,
+      final_ending: $("finalEnding").value,
+      pronunciations,
+      quality: $("quality").value,
+    });
+    await loadConfig();
+    $("settings").close();
+  } catch (error) {
+    $("settingsStatus").textContent = error.message;
+  }
+  $("saveSettings").disabled = false;
+};
+$("settings").oninput = () => { $("settingsStatus").textContent = ""; };
+$("settingsButton").onclick = () => {
+  $("settingsStatus").textContent = "";
+  $("saveSettings").disabled = true;
+  $("settings").showModal();
+  loadSettings().catch((error) => { $("settingsStatus").textContent = error.message; });
+};
+$("closeSettings").onclick = $("cancelSettings").onclick = () => $("settings").close();
 loadConfig().catch((error) => {
   $("problem").textContent = error.message;
   $("problem").hidden = false;

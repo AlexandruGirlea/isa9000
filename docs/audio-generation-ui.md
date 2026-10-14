@@ -41,14 +41,25 @@ fact-checking, reviewing and polishing, recording, ready.
 | **Stop** | Ends the run at once. |
 | **Retry** | Runs a stopped or failed run again. A written podcast only records its missing episodes. |
 | **Start over** | Clears the request, sources and results. Finished podcasts stay on disk. |
-| **Transcript** | Shows the episode's transcript under it, to read before you record. |
+| **Transcript** | Shows the episode's transcript under it, to read and correct before you record. **Save transcript** keeps your changes; they skip the fact-check, so check them yourself. |
 | **Record audio** | Records the episodes that have no audio: after *Transcripts first*, or after a review. |
 | **Re-record** | Records one episode again, for example after you corrected its transcript. |
 | **Download all** | Saves the podcast as a ZIP: MP3s, transcripts, cover and `podcast.json`. |
 
+To change the text before any audio is made, tick *Transcripts first*, edit and
+save the transcripts, then press **Record audio**.
+
 A podcast below the [quality bar](quality.md#the-quality-gate) is not recorded:
 the progress card says **Needs review** and why. Claims the fact-check could not
 confirm, and recordings worth a listen, are shown under their episode.
+
+## Settings
+
+The gear at the top opens **Settings**: the narrator's name and voice, the
+greeting and endings spoken in every episode, how to say names the narrator gets
+wrong, for example *Nginx* as *engine x*, and the quality: *Quick draft*,
+*Standard* or *Thorough*. **Save** writes them to `isa9000.toml`, keeping its
+comments, and the next podcast uses them.
 
 ## Presentation website
 

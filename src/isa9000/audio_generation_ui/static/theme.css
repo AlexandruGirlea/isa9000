@@ -31,7 +31,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{color-scheme:dark}
 html[data-theme="light"]{color-scheme:light}
-[data-dyslexic="1"] body,[data-dyslexic="1"] textarea,[data-dyslexic="1"] button{
+[data-dyslexic="1"] body,[data-dyslexic="1"] textarea,[data-dyslexic="1"] button,[data-dyslexic="1"] input,[data-dyslexic="1"] select{
   font-family:OpenDyslexic,"Comic Sans MS",var(--sans);letter-spacing:.02em}
 body{background:var(--bg);color:var(--text);font:14px/1.5 var(--sans);min-height:100vh;
   display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
@@ -83,10 +83,19 @@ h2{font-size:15px;font-weight:650;display:flex;align-items:center;gap:10px;margi
 .hint{font-size:12.5px;color:var(--muted);margin-bottom:10px}
 .mono{font-family:var(--mono);word-break:break-all}
 
-textarea,#source{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);
+textarea,#source,.fields input,.fields select,.pron input{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);
   border-radius:var(--r);padding:11px 13px;font:14px/1.5 var(--sans);outline:none;resize:vertical}
 #source{font:13px var(--mono)}
-textarea:focus,#source:focus{border-color:var(--brand)}
+textarea:focus,#source:focus,.fields input:focus,.fields select:focus,.pron input:focus{border-color:var(--brand)}
+.fields{display:grid;gap:10px;margin-bottom:12px}
+.fields label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.pron{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+#settings{margin:auto;width:min(560px,calc(100% - 32px));color:var(--text);overflow:hidden}
+#settings[open]{display:flex;flex-direction:column}
+#settings::backdrop{background:rgb(0 0 0 / .5)}
+.dialog-body{overflow:auto;min-height:0}
+.dialog-actions{justify-content:flex-end;margin-top:16px}
+.dialog-actions button.primary{width:auto;margin:0;padding:10px 22px}
 
 button{font:600 13.5px var(--sans);border:0;border-radius:var(--r);padding:10px 16px;cursor:pointer}
 button.primary{background:var(--brand);color:var(--on-brand);width:100%;padding:13px;
@@ -126,8 +135,7 @@ audio{width:100%;height:36px}
 .warn{font-size:12.5px;color:var(--bad);margin-top:6px}
 .transcript{margin-top:10px}
 .transcript summary{color:var(--text);font-size:13px;font-weight:600}
-.transcript-text{margin-top:8px;max-height:60vh;overflow:auto;white-space:pre-line;background:var(--bg);
-  border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;line-height:1.7}
+.transcript-text{margin:8px 0;min-height:40vh;line-height:1.7}
 
 footer{padding:14px 28px;color:var(--faint);font-size:12px;border-top:1px solid var(--line);text-align:center}
 footer:empty{display:none}
