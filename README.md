@@ -70,7 +70,7 @@ isa9000 runs on Microsoft Azure by default, or on Google Cloud. Choose one with
 | Service | Microsoft Foundry | Gemini API or Vertex AI |
 | Sign in | API key or `az login` | API key, service account or `gcloud auth application-default login` |
 | Writing and fact-checking | GPT-6.1 Sol | Gemini 3.1 Pro |
-| Narration | Azure Speech MAI-Voice-2.1, voice Olivia | Gemini 2.5 Pro TTS, voice Kore |
+| Narration | Azure Speech DragonHD, voice Serena | Gemini 2.5 Pro TTS, voice Kore |
 | Cover art | GPT Image 2.5 Sunburst | Gemini 3 Pro Image |
 
 To set up either one, see
