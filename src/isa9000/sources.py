@@ -8,7 +8,6 @@ from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
-from google.genai import types
 from pypdf import PdfReader
 
 from isa9000.links import HEADERS, TIMEOUT, is_url, supported_files
@@ -57,13 +56,9 @@ def _from_html(html: str, fallback: str) -> tuple[str, str]:
 
 
 def _from_pdf(data: bytes, client, model: str) -> str:
-    # Gemini reads tables and figures that plain text extraction loses.
+    # The model reads tables and figures that plain text extraction loses.
     if client is not None and len(data) <= MAX_INLINE_PDF_BYTES:
-        response = client.models.generate_content(
-            model=model,
-            contents=[types.Part.from_bytes(data=data, mime_type="application/pdf"), PDF_PROMPT],
-        )
-        text = _clean(response.text or "")
+        text = _clean(client.read_pdf(model, data, PDF_PROMPT))
         if text:
             return text
     reader = PdfReader(io.BytesIO(data))

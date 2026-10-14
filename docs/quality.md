@@ -9,7 +9,7 @@ isa9000 follows the production rules of [Dev Stories](https://devstories.eu),
 adapted for every business department. Each stage guards against two failures:
 saying something the sources do not say, and being hard to follow by ear.
 
-1. **Reading.** The main content of web pages; PDFs read by Gemini so tables and
+1. **Reading.** The main content of web pages; PDFs read by the model so tables and
    figures survive; up to 150,000 characters per source and 600,000 in total,
    with a warning when cut. Pages with almost no text stop the run before
    planning starts.

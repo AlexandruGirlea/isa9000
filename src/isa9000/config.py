@@ -6,8 +6,9 @@ import subprocess
 import tomllib
 from importlib.resources import files
 from pathlib import Path
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 CONFIG_NAME = "isa9000.toml"
 DEFAULT_LOGO = Path(__file__).with_name("logo.png")
@@ -19,6 +20,24 @@ DEFAULT_MARKS = {
 CONFIG_ENV = "ISA9000_CONFIG"
 USER_CONFIG = Path.home() / ".config" / "isa9000" / "config.toml"
 KEY_ENVS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
+AZURE_ENDPOINT_ENV = "AZURE_OPENAI_ENDPOINT"
+AZURE_KEY_ENV = "AZURE_OPENAI_API_KEY"
+AZURE_SCOPE = "https://cognitiveservices.azure.com/.default"
+AZURE_API_VERSION = "2025-04-01-preview"
+DEFAULT_MODELS = {
+    "azure": {
+        "text": "gpt-6.1-sol",
+        "speech": "MAI-Voice-2.1",
+        "image": "gpt-image-2.5-sunburst",
+        "transcribe": "gpt-transcribe",
+    },
+    "google": {
+        "text": "gemini-3.1-pro-preview",
+        "speech": "gemini-2.5-pro-preview-tts",
+        "image": "gemini-3-pro-image",
+    },
+}
+DEFAULT_VOICES = {"azure": "en-US-Olivia", "google": "Kore"}
 DEFAULT_COLOR = "#6C3CE1"
 LOGO_TYPES = {
     ".svg": "image/svg+xml",
@@ -47,15 +66,21 @@ class GoogleSettings(_Settings):
     credentials_file: str = ""
 
 
+class AzureSettings(_Settings):
+    endpoint: str = ""
+    api_key: str = ""
+
+
 class ModelSettings(_Settings):
-    text: str = "gemini-3.1-pro-preview"
-    speech: str = "gemini-2.5-pro-preview-tts"
-    image: str = "gemini-3-pro-image"
+    text: str = ""
+    speech: str = ""
+    image: str = ""
+    transcribe: str = ""
 
 
 class NarratorSettings(_Settings):
     name: str = "Isabela"
-    voice: str = "Kore"
+    voice: str = ""
     style: str = (
         "Read the script below like a professional podcaster, with a warm, engaging, "
         "and slightly energetic tone."
@@ -100,7 +125,9 @@ class PresentationWebsiteSettings(_Settings):
 
 
 class Config(_Settings):
+    provider: Literal["azure", "google"] = "azure"
     google: GoogleSettings = Field(default_factory=GoogleSettings)
+    azure: AzureSettings = Field(default_factory=AzureSettings)
     models: ModelSettings = Field(default_factory=ModelSettings)
     narrator: NarratorSettings = Field(default_factory=NarratorSettings)
     branding: BrandingSettings = Field(default_factory=BrandingSettings)
@@ -109,6 +136,32 @@ class Config(_Settings):
         default_factory=PresentationWebsiteSettings
     )
     path: Path | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _google_without_provider(cls, data):
+        if not isinstance(data, dict) or "provider" in data:
+            return data
+        models = dict(data.get("models") or {})
+        google = dict(data.get("google") or {})
+        credentials = ("api_key", "project", "credentials_file")
+        if any(str(name).startswith("gemini") for name in models.values()) or any(
+            google.get(key) for key in credentials
+        ):
+            return {**data, "provider": "google"}
+        return data
+
+    @model_validator(mode="after")
+    def _provider_defaults(self) -> Config:
+        models = {
+            kind: getattr(self.models, kind) or name
+            for kind, name in DEFAULT_MODELS[self.provider].items()
+        }
+        models.setdefault("transcribe", self.models.transcribe or models["text"])
+        self.models = self.models.model_copy(update=models)
+        voice = self.narrator.voice or DEFAULT_VOICES[self.provider]
+        self.narrator = self.narrator.model_copy(update={"voice": voice})
+        return self
 
     def resolve(self, value: str) -> Path:
         candidate = Path(value).expanduser()
@@ -194,7 +247,19 @@ def _api_key(config: Config) -> str:
     return next((os.environ[name] for name in KEY_ENVS if os.environ.get(name)), "")
 
 
+def _azure_endpoint(config: Config) -> str:
+    return config.azure.endpoint or os.environ.get(AZURE_ENDPOINT_ENV, "")
+
+
 def credentials_problem(config: Config) -> str | None:
+    if config.provider == "azure":
+        if _azure_endpoint(config):
+            return None
+        return (
+            "no Azure endpoint: set [azure] endpoint in isa9000.toml, "
+            f"or the {AZURE_ENDPOINT_ENV} environment variable; "
+            'to use Google, add provider = "google" at the top of isa9000.toml'
+        )
     google = config.google
     if google.project:
         if google.credentials_file and not config.resolve(google.credentials_file).is_file():
@@ -208,13 +273,44 @@ def credentials_problem(config: Config) -> str | None:
     )
 
 
+def ai_client(config: Config):
+    problem = credentials_problem(config)
+    if problem:
+        raise ConfigError(problem)
+    if config.provider == "azure":
+        return azure_client(config)
+    from isa9000.gemini import Gemini
+
+    return Gemini(genai_client(config))
+
+
+def azure_client(config: Config):
+    from openai import AzureOpenAI
+
+    from isa9000.foundry import Foundry
+
+    endpoint = _azure_endpoint(config)
+    options = {
+        "azure_endpoint": endpoint,
+        "api_version": AZURE_API_VERSION,
+        "timeout": REQUEST_TIMEOUT_MS / 1000,
+        "max_retries": RETRY_ATTEMPTS,
+    }
+    api_key = config.azure.api_key or os.environ.get(AZURE_KEY_ENV, "")
+    if api_key:
+        client = AzureOpenAI(api_key=api_key, **options)
+        return Foundry(client, endpoint, lambda: {"Ocp-Apim-Subscription-Key": api_key})
+    from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
+    token = get_bearer_token_provider(DefaultAzureCredential(), AZURE_SCOPE)
+    client = AzureOpenAI(azure_ad_token_provider=token, **options)
+    return Foundry(client, endpoint, lambda: {"Authorization": f"Bearer {token()}"})
+
+
 def genai_client(config: Config):
     from google import genai
     from google.genai import types
 
-    problem = credentials_problem(config)
-    if problem:
-        raise ConfigError(problem)
     google = config.google
     http_options = types.HttpOptions(
         timeout=REQUEST_TIMEOUT_MS,

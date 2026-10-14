@@ -1,5 +1,6 @@
 import pytest
 
+from isa9000.gemini import Gemini
 from isa9000.voice import Speaker, SpeechError, record_episode
 
 SCRIPT = "\n\n".join(
@@ -9,7 +10,7 @@ SCRIPT = "\n\n".join(
 
 @pytest.fixture
 def speaker(gemini):
-    return Speaker(gemini, "speech-model", "Kore", "Warm.", "text-model")
+    return Speaker(Gemini(gemini), "speech-model", "Kore", "Warm.", "text-model")
 
 
 @pytest.mark.parametrize("stretch", [1.0, 1.16, 1.28])
