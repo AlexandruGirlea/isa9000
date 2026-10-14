@@ -3,7 +3,6 @@ from __future__ import annotations
 import statistics
 from concurrent.futures import ThreadPoolExecutor
 
-from google.genai import types
 from pydantic import BaseModel
 
 from isa9000.sources import Source
@@ -111,23 +110,8 @@ def _numbered(sources: list[Source], only: list[int] | None = None) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
-def _structured(client, model: str, prompt: str, schema: type[BaseModel]):
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=schema,
-        ),
-    )
-    if response.parsed is None:
-        raise RuntimeError(f"{model} returned no usable answer: {(response.text or '')[:200]}")
-    return response.parsed
-
-
 def _text(client, model: str, prompt: str) -> str:
-    response = client.models.generate_content(model=model, contents=prompt)
-    text = (response.text or "").strip()
+    text = client.text(model, prompt).strip()
     if not text:
         raise RuntimeError(f"{model} returned an empty script")
     return text
@@ -194,7 +178,7 @@ Description: two plain sentences on what the listener will know after the podcas
 
 Sources:
 {_numbered(sources)}"""
-    plan = _structured(client, model, prompt, PodcastPlan)
+    plan = client.structured(model, prompt, PodcastPlan)
     if not plan.episodes:
         raise RuntimeError("the plan has no episodes; the sources may not cover the request")
     return plan
@@ -206,7 +190,7 @@ Title: {title}
 Description: {description}
 
 {COVER_RULE}"""
-    return _structured(client, model, prompt, CoverIdea).cover
+    return client.structured(model, prompt, CoverIdea).cover
 
 
 def _score_title(client, model: str, plan: PodcastPlan) -> TitleScore:
@@ -235,7 +219,7 @@ Title: {plan.title}
 Description: {plan.description}
 Episodes:
 {episodes}"""
-    return _structured(client, model, prompt, TitleScore)
+    return client.structured(model, prompt, TitleScore)
 
 
 def review_title(client, model: str, plan: PodcastPlan) -> tuple[str, int]:
@@ -393,7 +377,7 @@ Script:
 
 Sources:
 {_numbered(sources, episode.sources)}"""
-    return _structured(client, model, prompt, Review).problems
+    return client.structured(model, prompt, Review).problems
 
 
 def score_podcast(client, model: str, plan: PodcastPlan, scripts: list[str]) -> PodcastScore:
@@ -468,4 +452,4 @@ the score is 9 or more) and suggestion (one sentence with a specific fix, or "No
 is 9 or more).
 
 {episodes}"""
-    return _structured(client, model, prompt, PodcastScore)
+    return client.structured(model, prompt, PodcastScore)

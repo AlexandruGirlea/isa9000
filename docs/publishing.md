@@ -8,7 +8,7 @@ nav_order: 6
 `isa9000 presentation-website` builds the presentation website from the podcasts
 folder into `isa9000-presentation_website/`. `--serve` previews it at
 `http://127.0.0.1:8800`; in the audio generation UI,
-**Build the presentation website** does the same. It needs no Google credentials and
+**Build the presentation website** does the same. It needs no model credentials and
 never calls a model.
 
 <p align="center">
@@ -98,7 +98,9 @@ jobs:
 
 `.github/workflows/create-podcast.yml` creates a podcast from the **Actions**
 tab and opens a pull request, so someone reviews it before it is published.
-Add the `GEMINI_API_KEY` secret.
+Add the `AZURE_OPENAI_API_KEY` secret and the `AZURE_OPENAI_ENDPOINT` variable.
+On Google, commit an `isa9000.toml` with `provider = "google"` and pass a
+`GEMINI_API_KEY` secret instead.
 
 ```yaml
 name: Create a podcast
@@ -127,7 +129,8 @@ jobs:
       - run: pip install isa9000
       - name: Create the podcast
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           REQUEST: ${{ inputs.request }}
           SOURCES: ${{ inputs.sources }}
         run: |

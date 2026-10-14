@@ -31,6 +31,13 @@ def test_config_mistakes_are_named(tmp_path, setting, problem):
         load_config(str(settings))
 
 
+def test_models_and_voice_follow_the_provider():
+    google = Config(provider="google")
+    assert (google.models.text, google.narrator.voice) == ("gemini-3.1-pro-preview", "Kore")
+    assert (Config().models.text, Config().narrator.voice) == ("gpt-6.1-sol", "en-US-Olivia")
+    assert Config(models={"text": "gemini-3.1-pro-preview"}).provider == "google"
+
+
 def test_git_would_not_track_outside_a_repository(tmp_path):
     assert not git_would_track(tmp_path / "isa9000.toml")
 
