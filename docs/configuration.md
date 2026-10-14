@@ -41,7 +41,7 @@ as GPT-5 or newer. Swap in newer models here as you deploy them.
 | Setting | Azure default | Google default | Used for |
 |---|---|---|---|
 | `text` | `"gpt-6.1-sol"` | `"gemini-3.1-pro-preview"` | Reading PDFs, planning, writing, checking |
-| `speech` | `"MAI-Voice-2.1"` | `"gemini-2.5-pro-preview-tts"` | Narration |
+| `speech` | `"DragonHDLatestNeural"` | `"gemini-2.5-pro-preview-tts"` | Narration |
 | `image` | `"gpt-image-2.5-sunburst"` | `"gemini-3-pro-image"` | Cover art |
 | `transcribe` | `"gpt-transcribe"` | The `text` model | Checking each recording |
 
@@ -50,7 +50,7 @@ as GPT-5 or newer. Swap in newer models here as you deploy them.
 | Setting | Default | Meaning |
 |---|---|---|
 | `name` | `"Isabela"` | The name in the greeting. |
-| `voice` | `""` | Empty uses `"en-US-Olivia"` on Azure and `"Kore"` on Google. Others to try: en-US-Harper or en-US-Iris on Azure; Sulafat, Aoede, Leda or Zephyr on Google. |
+| `voice` | `""` | Empty uses `"en-US-Serena"` on Azure and `"Kore"` on Google. Others to try: en-US-Ava or en-US-Emma on Azure; Sulafat, Aoede, Leda or Zephyr on Google. |
 | `style` | `"Read the script below like a professional podcaster, with a warm, engaging, and slightly energetic tone."` | How the voice reads, on Gemini. Azure Speech voices take the tone from the script. |
 
 Names the voice gets wrong go in `[narrator.pronunciations]`:

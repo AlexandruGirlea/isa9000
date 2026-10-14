@@ -6,7 +6,7 @@ Versions follow [semantic versioning](https://semver.org/).
 ## 0.2.0
 
 - Microsoft Foundry on Azure is now the default AI service: GPT-6.1 Sol writes
-  and checks, the Azure Speech voice Olivia (MAI-Voice-2.1) narrates, GPT Image
+  and checks, the Azure Speech voice Serena (DragonHD) narrates, GPT Image
   2.5 Sunburst draws covers and gpt-transcribe checks each recording. Set your
   Foundry `[azure] endpoint`, and sign in with an API key or with `az login`.
 - Google stays fully supported with `provider = "google"`. A configuration
