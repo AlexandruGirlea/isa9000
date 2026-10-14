@@ -27,7 +27,7 @@ AZURE_API_VERSION = "2025-04-01-preview"
 DEFAULT_MODELS = {
     "azure": {
         "text": "gpt-6.1-sol",
-        "speech": "MAI-Voice-2.1",
+        "speech": "DragonHDLatestNeural",
         "image": "gpt-image-2.5-sunburst",
         "transcribe": "gpt-transcribe",
     },
@@ -37,7 +37,7 @@ DEFAULT_MODELS = {
         "image": "gemini-3-pro-image",
     },
 }
-DEFAULT_VOICES = {"azure": "en-US-Olivia", "google": "Kore"}
+DEFAULT_VOICES = {"azure": "en-US-Serena", "google": "Kore"}
 DEFAULT_COLOR = "#6C3CE1"
 LOGO_TYPES = {
     ".svg": "image/svg+xml",
