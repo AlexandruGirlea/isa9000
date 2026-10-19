@@ -17,6 +17,10 @@
 </p>
 
 <p align="center">
+  🎧 <strong>Hear it:</strong> every episode on <a href="https://devstories.eu">devstories.eu</a> was made with isa9000.
+</p>
+
+<p align="center">
   <a href="https://pypi.org/project/isa9000/"><img src="https://img.shields.io/pypi/v/isa9000" alt="PyPI"></a>
   <a href="https://pypi.org/project/isa9000/"><img src="https://img.shields.io/pypi/pyversions/isa9000" alt="Python versions"></a>
   <a href="https://github.com/AlexandruGirlea/isa9000/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0"></a>
