@@ -22,6 +22,13 @@ screen. Add `"tags": ["Security", "HR"]` to a `podcast.json` for a topic filter.
 The site is static files with no server code or tracking, and asks search
 engines not to index it.
 
+Use your own name, logo and colors through `[branding]` in `isa9000.toml`.
+The footer shows only `powered_by` ("Powered by isa9000" by default), without a
+copyright label. Rebuild existing presentation sites to apply the new footer.
+
+For a shared application with Microsoft sign-in, team libraries and browser-based
+creation, see [isa9000-ops](https://alexandrugirlea.github.io/isa9000-ops/).
+
 ## After every change
 
 The presentation website does not update itself. After a new podcast, a re-recorded episode,
