@@ -22,6 +22,17 @@ Foundry) by default, or on Google Cloud (the Gemini API or Vertex AI).
 
 ## Quick start
 
+**Now meet [isa9000-ops](https://github.com/AlexandruGirlea/isa9000-ops): your
+business can run the engine behind Dev Stories as its own audio learning space.**
+Add your name and logo, let employees sign in with Microsoft, and give each team
+a library of podcasts made from your documents. IT runs the application in your
+Azure environment; employees create and listen in the browser.
+
+[See the installation journey](https://alexandrugirlea.github.io/isa9000-ops/getting-started.html){: .btn .btn-primary }
+
+Azure deployment is validated; general company-domain production setup remains
+pending. For individual use, start below.
+
 ```bash
 pip install "isa9000[audio-generation-ui]"
 isa9000 init                           # writes isa9000.toml: add your Azure or Google credentials
@@ -41,10 +52,11 @@ service accounts, see [Configuration](configuration.md#google).
 | Business users | The [audio generation UI](audio-generation-ui.md), on their own computer | Download the presentation website as a ZIP and upload it |
 | Developers | The [command line or Python](cli.md), in scripts and schedules | Their own upload step, for example to Azure Blob Storage |
 | Everyone, on a company portal | The podcasts folder in Git, published by CI | [GitHub Actions](publishing.md#automate-with-github-actions) |
+| Teams with Microsoft work accounts | [isa9000-ops](https://alexandrugirlea.github.io/isa9000-ops/) in the browser | Your organization's Azure installation and group libraries |
 
 The audio generation UI serves one person on one computer: it answers only on
-`127.0.0.1` and has no sign-in. A shared audio generation UI hosted on a portal
-is planned.
+`127.0.0.1` and has no sign-in. isa9000-ops provides the separate shared application
+with Microsoft sign-in and group access.
 
 ## What leaves your machine
 

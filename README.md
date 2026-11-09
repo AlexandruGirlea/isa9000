@@ -48,7 +48,20 @@ from the engine behind [devstories.eu](https://devstories.eu) (more than 60 audi
 courses). **Runs on Microsoft Azure ([Microsoft Foundry](https://ai.azure.com)) or on
 Google Cloud (the [Gemini API](https://ai.google.dev/gemini-api/docs) or Vertex AI).**
 
+## For your whole organization
+
+**Bringing audio learning to your whole business? Meet
+[isa9000-ops](https://github.com/AlexandruGirlea/isa9000-ops).** Run the engine
+behind [devstories.eu](https://devstories.eu) as your company's own audio library:
+your name and logo, Microsoft work-account sign-in, team libraries and podcast
+creation in the browser, hosted in your Azure environment.
+IT installs it once; employees open a URL and press play.
+Start with the [installation journey](https://alexandrugirlea.github.io/isa9000-ops/getting-started.html).
+Azure deployment is validated; company-domain production setup is still pending.
+
 ## Quick start
+
+For individual creation, scripts or a static audio website:
 
 ```bash
 pip install "isa9000[audio-generation-ui]"
@@ -100,6 +113,10 @@ and download the results; developers use the command line, Python and CI.
 Everything listeners hear or see, from the narrator to the logo, is a setting.
 
 ## Privacy
+
+The presentation website is white-label: set your name, logo and colors. Its
+footer shows **Powered by isa9000** by default, with no copyright label over
+your organization's content.
 
 Only what the models need leaves your machine: your request, the content of
 your sources (PDFs are sent as files), the scripts to record and short clips of

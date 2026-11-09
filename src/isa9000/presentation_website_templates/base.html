@@ -206,15 +206,8 @@
 </main>
 
 <footer class="footer">
-    <div class="container">
-        <div class="row align-items-center gy-2">
-            <div class="col-md-6 text-center text-md-start">
-                <p>&copy; <span id="current-year"></span> <strong>{{ site.brand }}</strong></p>
-            </div>
-            <div class="col-md-6 text-center text-md-end">
-                <p>{{ site.powered_by }}</p>
-            </div>
-        </div>
+    <div class="container text-center">
+        <p>{{ site.powered_by }}</p>
     </div>
 </footer>
 
@@ -230,7 +223,6 @@
         }
         window.addEventListener('scroll', onScroll);
         onScroll();
-        document.getElementById('current-year').textContent = new Date().getFullYear();
 
         function setTheme(theme) {
             root.setAttribute('data-theme', theme);
