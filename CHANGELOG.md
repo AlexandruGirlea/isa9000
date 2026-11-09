@@ -3,7 +3,13 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
-## Unreleased
+## 0.3.1
+
+### Fixed
+
+- Source checks judge only the link given. A site that answers unknown pages with
+  its home page is no longer rejected as a not-found page; a page whose title says
+  "not found" or "404" still is.
 
 ### Added
 

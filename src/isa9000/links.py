@@ -12,6 +12,7 @@ TIMEOUT = 20
 SUPPORTED_FILES = {".txt", ".md", ".markdown", ".html", ".htm", ".pdf"}
 SIGN_IN_HOSTS = {"login.microsoftonline.com", "accounts.google.com", "login.live.com"}
 SIGN_IN_PATHS = ("/login", "/signin", "/sign-in", "/oauth", "/saml", "/sso")
+NOT_FOUND_TITLE = re.compile(r"\b404\b|not found", re.IGNORECASE)
 
 
 @dataclass
@@ -46,20 +47,8 @@ def _sign_in_page(url: str) -> bool:
 
 
 def _error_page(response: requests.Response) -> bool:
-    # Some sites answer every unknown path with 200 and a "not found" page.
-    # Ask for a page that cannot exist next to this one and compare.
-    parsed = urllib.parse.urlparse(response.url)
-    parent = parsed.path.rstrip("/").rsplit("/", 1)[0]
-    probe = f"{parsed.scheme}://{parsed.netloc}{parent}/isa9000-missing-page-check"
-    try:
-        missing = requests.get(probe, headers=HEADERS, timeout=TIMEOUT)
-    except requests.RequestException:
-        return False
-    if missing.status_code != 200:
-        return False
-    same_title = _title(response.text) == _title(missing.text)
-    similar_size = abs(len(response.text) - len(missing.text)) < 0.02 * max(len(missing.text), 1)
-    return same_title and similar_size
+    # Some sites answer a missing page with 200; judge only the page given.
+    return bool(NOT_FOUND_TITLE.search(_title(response.text)))
 
 
 def _check_url(source: str) -> SourceStatus:
@@ -75,7 +64,7 @@ def _check_url(source: str) -> SourceStatus:
     if code != 200:
         return SourceStatus(source, False, "unreachable", f"HTTP {code}")
     if "html" in response.headers.get("content-type", "").lower() and _error_page(response):
-        return SourceStatus(source, False, "error_page", "the site answers with a not-found page")
+        return SourceStatus(source, False, "error_page", "the page says it was not found")
     return SourceStatus(source, True, "reachable", f"HTTP {code}")
 
 
