@@ -3,6 +3,24 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.3.1
+
+### Fixed
+
+- Source checks judge only the link given. A site that answers unknown pages with
+  its home page is no longer rejected as a not-found page; a page whose title says
+  "not found" or "404" still is.
+
+### Added
+
+- Introduced isa9000-ops in the README and documentation, with its white-label
+  company audio library and installation journey.
+
+### Changed
+
+- Presentation website footers show only the configured attribution, without a
+  copyright label over the organization's content.
+
 ## 0.3.0
 
 - The audio generation UI edits transcripts: correct an episode, press **Save

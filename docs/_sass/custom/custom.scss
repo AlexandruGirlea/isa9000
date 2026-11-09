@@ -42,6 +42,22 @@
 }
 
 .main-content {
+  min-width: 0;
+
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  :not(pre) > code {
+    overflow-wrap: anywhere;
+  }
+
+  a.btn-primary,
+  a.btn-primary:hover {
+    color: #fff;
+  }
+
   h1,
   h2,
   h3,
