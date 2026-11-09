@@ -32,7 +32,7 @@ isa9000 create -r "What changed in our travel policy?" -s ./policies -s https://
 | `-s, --source` | A link, file or folder. Repeat for more. |
 | `--audio-kb` | The audio knowledge base folder to create the podcast in. Default: `[output] folder`. |
 | `--text-only` | Write, fact-check and polish the transcripts, then stop. |
-| `--follow-links` | Also read up to 25 linked pages from the same section of each website. |
+| `--follow-links` | Also read up to 25 linked pages in total from the same site: first the page's own section, then up to 5 per page from the site's other addresses, such as `www.` or another subdomain. Other sites are not followed. |
 
 ## record
 

@@ -3,16 +3,20 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
-## 0.3.1
+## 0.3.2
 
 ### Fixed
 
+- A followed page with too little text is skipped instead of failing the whole podcast.
 - Source checks judge only the link given. A site that answers unknown pages with
   its home page is no longer rejected as a not-found page; a page whose title says
   "not found" or "404" still is.
 
 ### Added
 
+- `--follow-links` also follows links to the same site's other addresses, such as
+  `www.` or another subdomain of the same domain: up to 5 per page, after the
+  page's own section. Other sites are still not followed.
 - Introduced isa9000-ops in the README and documentation, with its white-label
   company audio library and installation journey.
 

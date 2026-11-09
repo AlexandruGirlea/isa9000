@@ -156,7 +156,7 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument(
         "--follow-links",
         action="store_true",
-        help="also read up to 25 pages linked from each web page, in the same section of its site",
+        help="also read up to 25 linked pages in total from the same site and its subdomains",
     )
     create.set_defaults(run=_create)
 
