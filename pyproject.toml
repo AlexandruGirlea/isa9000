@@ -48,6 +48,7 @@ dependencies = [
     "pydantic>=2",
     "pypdf>=4",
     "requests>=2.31",
+    "tldextract>=5.4",
 ]
 
 [project.optional-dependencies]

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import requests
+import tldextract
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
 
@@ -16,6 +17,7 @@ from isa9000.progress import Progress, Step
 MAX_SOURCE_CHARS = 150_000
 MAX_TOTAL_CHARS = 600_000
 MAX_LINKED_PAGES = 25
+MAX_SITE_LINKS = 5
 MAX_INLINE_PDF_BYTES = 18_000_000
 MIN_PAGE_CHARS = 500
 NOISE_TAGS = ["script", "style", "noscript", "nav", "header", "footer", "aside", "form", "svg"]
@@ -31,6 +33,13 @@ between parts)
 
 Output as structured plain text with clear section headers. Preserve all terminology and \
 specific values."""
+
+
+# The bundled public suffix list: nothing is downloaded, and hosts such as a.github.io and
+# b.github.io stay separate sites.
+DOMAINS = tldextract.TLDExtract(
+    suffix_list_urls=(), cache_dir=None, include_psl_private_domains=True
+)
 
 
 @dataclass
@@ -66,11 +75,13 @@ def _from_pdf(data: bytes, client, model: str) -> str:
 
 
 def _linked_pages(url: str, html: str) -> list[str]:
-    # Links under the page's folder: its siblings and sub-pages.
+    # Links under the page's folder first, then a few on the same site's other hosts.
     parsed = urllib.parse.urlparse(url)
     path = parsed.path
     prefix = path.rstrip("/") if path.endswith("/") else path.rsplit("/", 1)[0]
+    site = DOMAINS(parsed.hostname or "").top_domain_under_public_suffix
     found: list[str] = []
+    elsewhere: list[str] = []
     for anchor in BeautifulSoup(html, "html.parser").find_all("a", href=True):
         href = anchor["href"]
         if href.startswith(("javascript:", "mailto:", "#")):
@@ -78,11 +89,17 @@ def _linked_pages(url: str, html: str) -> list[str]:
         if len(anchor.get_text(" ", strip=True)) < 2:
             continue
         link = urllib.parse.urlparse(urllib.parse.urljoin(url, href))._replace(fragment="")
-        in_scope = not prefix or link.path == prefix or link.path.startswith(prefix + "/")
         clean = urllib.parse.urlunparse(link)
-        if link.netloc == parsed.netloc and in_scope and clean != url and clean not in found:
-            found.append(clean)
-    return found
+        if clean == url or clean in found or clean in elsewhere:
+            continue
+        if link.netloc == parsed.netloc:
+            if not prefix or link.path == prefix or link.path.startswith(prefix + "/"):
+                found.append(clean)
+        elif site and link.scheme in ("http", "https") and site == DOMAINS(
+            link.hostname or ""
+        ).top_domain_under_public_suffix:
+            elsewhere.append(clean)
+    return found + elsewhere[:MAX_SITE_LINKS]
 
 
 def _load_url(url: str, client, model: str) -> tuple[Source, list[str]]:
@@ -123,6 +140,9 @@ def _load_linked(
             progress(
                 Step("read", f"Skipped a linked page that could not be read: {link} ({error})")
             )
+            continue
+        if len(source.text) < MIN_PAGE_CHARS:
+            progress(Step("read", f"Skipped a linked page with too little text: {link}"))
             continue
         loaded.append(source)
     return loaded

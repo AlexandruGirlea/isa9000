@@ -31,7 +31,7 @@ badge, so it is easy to tell apart from the presentation website.
    exported copy.
 3. **Create:** tick *Transcripts first* to review before recording, or *Also
    read pages linked from each web page* to read up to 25 more pages from the
-   same section of a site.
+   same site, including its other subdomains.
 
 The progress card follows the run: checking, reading, planning, writing and
 fact-checking, reviewing and polishing, recording, ready.
