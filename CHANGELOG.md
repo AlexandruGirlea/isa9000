@@ -3,6 +3,14 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.3.4
+
+### Fixed
+
+- On Azure, a PDF read that fails with a server or connection error is retried, up to
+  4 times. Since 0.3.3 such an error in the middle of the answer failed the whole
+  podcast. A read that times out is still not retried.
+
 ## 0.3.3
 
 ### Fixed

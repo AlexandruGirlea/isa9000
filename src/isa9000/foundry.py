@@ -4,6 +4,7 @@ import base64
 import re
 from xml.sax.saxutils import escape, quoteattr
 
+import httpx2
 import openai
 import requests
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ SPEECH_HEADERS = {
     "Content-Type": "application/ssml+xml",
     "X-Microsoft-OutputFormat": "raw-24khz-16bit-mono-pcm",
 }
+PDF_READ_RETRIES = 4
 
 
 class Foundry:
@@ -53,18 +55,23 @@ class Foundry:
             {"type": "input_file", "filename": "source.pdf", "file_data": pdf},
             {"type": "input_text", "text": prompt},
         ]
-        try:
-            with self.client.responses.create(
-                model=model,
-                input=[{"role": "user", "content": content}],
-                reasoning=self.reasoning,
-                stream=True,
-            ) as stream:
-                for event in stream:
-                    if event.type in ("response.completed", "response.incomplete"):
-                        return event.response.output_text
-        except openai.BadRequestError:
-            return ""
+        for attempt in range(PDF_READ_RETRIES + 1):
+            try:
+                with self.client.responses.create(
+                    model=model,
+                    input=[{"role": "user", "content": content}],
+                    reasoning=self.reasoning,
+                    stream=True,
+                ) as stream:
+                    for event in stream:
+                        if event.type in ("response.completed", "response.incomplete"):
+                            return event.response.output_text
+            except openai.BadRequestError:
+                return ""
+            except (openai.APIError, httpx2.TransportError) as error:
+                timed_out = isinstance(error, (openai.APITimeoutError, httpx2.TimeoutException))
+                if timed_out or attempt == PDF_READ_RETRIES:
+                    raise
         raise RuntimeError(f"{model} did not finish reading the PDF")
 
     def speak(
