@@ -3,6 +3,20 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.3.3
+
+### Fixed
+
+- On Azure, a model call that stays silent for several minutes, such as reading a
+  large or image-heavy PDF, no longer loses its connection on networks that silently
+  drop idle connections, as outbound traffic from Azure Container Apps does after
+  4 minutes. The connection to the model now sends TCP keepalive probes. This is
+  not applied when a proxy is configured.
+
+### Changed
+
+- Requires `openai` 3.31 or newer.
+
 ## 0.3.2
 
 ### Fixed
