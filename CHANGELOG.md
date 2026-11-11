@@ -19,6 +19,9 @@ Versions follow [semantic versioning](https://semver.org/).
 
 - A PDF over 18 MB or 100 pages is refused with a message that says so. Before, a
   PDF over 18 MB was read as plain text, without its tables and figures.
+- A podcast can use at most 10 documents: each link, each file and each file inside
+  a folder counts as one. A link can have at most 2,000 characters. More is refused
+  before anything is read.
 - Requires `openai` 3.31 or newer.
 
 ## 0.3.2

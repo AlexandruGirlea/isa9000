@@ -9,6 +9,8 @@ import requests
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; isa9000)"}
 TIMEOUT = 20
+MAX_SOURCES = 10
+MAX_URL_CHARS = 2000
 SUPPORTED_FILES = {".txt", ".md", ".markdown", ".html", ".htm", ".pdf"}
 SIGN_IN_HOSTS = {"login.microsoftonline.com", "accounts.google.com", "login.live.com"}
 SIGN_IN_PATHS = ("/login", "/signin", "/sign-in", "/oauth", "/saml", "/sso")
@@ -52,6 +54,9 @@ def _error_page(response: requests.Response) -> bool:
 
 
 def _check_url(source: str) -> SourceStatus:
+    if len(source) > MAX_URL_CHARS:
+        detail = f"{len(source):,} characters; a link can have at most {MAX_URL_CHARS:,}"
+        return SourceStatus(source, False, "too_long", detail)
     try:
         response = requests.get(source, headers=HEADERS, timeout=TIMEOUT)
     except requests.RequestException as error:
@@ -99,4 +104,15 @@ def check_source(source: str) -> SourceStatus:
 
 
 def check_sources(sources: list[str]) -> list[SourceStatus]:
-    return [check_source(source) for source in sources]
+    statuses, documents = [], 0
+    for status in map(check_source, sources):
+        folder = status.status == "folder"
+        documents += len(supported_files(Path(status.source).expanduser())) if folder else 1
+        if status.ok and documents > MAX_SOURCES:
+            status.ok, status.status = False, "too_many"
+            status.detail = (
+                f"brings the total to {documents} documents; "
+                f"a podcast can use at most {MAX_SOURCES}"
+            )
+        statuses.append(status)
+    return statuses
