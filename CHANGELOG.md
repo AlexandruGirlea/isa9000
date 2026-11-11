@@ -3,6 +3,27 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.3.3
+
+### Fixed
+
+- On Azure, a model call that stays silent for several minutes, such as reading a
+  large or image-heavy PDF, no longer loses its connection on networks that silently
+  drop idle connections, as outbound traffic from Azure Container Apps does after
+  4 minutes. The connection to the model now sends TCP keepalive probes. This is
+  not applied when a proxy is configured.
+- On Azure, the PDF read streams its answer. A long read no longer fails at the
+  10-minute timeout, and a read that stalls fails once instead of being retried.
+
+### Changed
+
+- A PDF over 18 MB or 100 pages is refused with a message that says so. Before, a
+  PDF over 18 MB was read as plain text, without its tables and figures.
+- A podcast can use at most 10 documents: each link, each file and each file inside
+  a folder counts as one. A link can have at most 2,000 characters. More is refused
+  before anything is read.
+- Requires `openai` 3.31 or newer.
+
 ## 0.3.2
 
 ### Fixed

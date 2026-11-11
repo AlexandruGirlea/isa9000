@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import socket
 import string
 import subprocess
 import tempfile
@@ -11,6 +12,7 @@ import tomllib
 from importlib.resources import files
 from pathlib import Path
 from typing import Literal
+from urllib.request import getproxies
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
@@ -63,6 +65,14 @@ PLACEHOLDERS = ("narrator", "brand", "podcast", "episode", "episodes", "title", 
 GIT_IGNORE_ALL = "# Created by isa9000: made from internal sources, so it stays out of git.\n*\n"
 REQUEST_TIMEOUT_MS = 600_000
 RETRY_ATTEMPTS = 6
+KEEPALIVE = (
+    (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+    (
+        socket.IPPROTO_TCP,
+        socket.TCP_KEEPIDLE if hasattr(socket, "TCP_KEEPIDLE") else socket.TCP_KEEPALIVE,
+        60,
+    ),
+)
 
 
 class ConfigError(RuntimeError):
@@ -400,7 +410,8 @@ def ai_client(config: Config):
 
 
 def azure_client(config: Config):
-    from openai import AzureOpenAI
+    from httpx2 import HTTPTransport
+    from openai import AzureOpenAI, DefaultHttpxClient
 
     from isa9000.foundry import Foundry
 
@@ -411,6 +422,10 @@ def azure_client(config: Config):
         "timeout": REQUEST_TIMEOUT_MS / 1000,
         "max_retries": RETRY_ATTEMPTS,
     }
+    if not getproxies():
+        options["http_client"] = DefaultHttpxClient(
+            transport=HTTPTransport(socket_options=KEEPALIVE)
+        )
     effort = QUALITY[config.output.quality]["reasoning_effort"]
     api_key = config.azure.api_key or os.environ.get(AZURE_KEY_ENV, "")
     if api_key:
