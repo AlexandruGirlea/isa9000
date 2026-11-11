@@ -18,7 +18,8 @@ MAX_SOURCE_CHARS = 150_000
 MAX_TOTAL_CHARS = 600_000
 MAX_LINKED_PAGES = 25
 MAX_SITE_LINKS = 5
-MAX_INLINE_PDF_BYTES = 18_000_000
+MAX_PDF_MB = 18
+MAX_PDF_PAGES = 100
 MIN_PAGE_CHARS = 500
 NOISE_TAGS = ["script", "style", "noscript", "nav", "header", "footer", "aside", "form", "svg"]
 PDF_PROMPT = """Extract ALL content from this PDF. You MUST include:
@@ -64,9 +65,19 @@ def _from_html(html: str, fallback: str) -> tuple[str, str]:
     return title or fallback, _clean(root.get_text("\n"))
 
 
-def _from_pdf(data: bytes, client, model: str) -> str:
+def _from_pdf(ref: str, data: bytes, client, model: str) -> str:
+    try:
+        pages = len(PdfReader(io.BytesIO(data)).pages)
+    except Exception:
+        pages = 0
+    size = len(data) / 1_000_000
+    if size > MAX_PDF_MB or pages > MAX_PDF_PAGES:
+        raise ValueError(
+            f"{ref} is too large ({size:.1f} MB, {pages} pages): a PDF can have at most "
+            f"{MAX_PDF_MB} MB and {MAX_PDF_PAGES} pages; split it into smaller files"
+        )
     # The model reads tables and figures that plain text extraction loses.
-    if client is not None and len(data) <= MAX_INLINE_PDF_BYTES:
+    if client is not None:
         text = _clean(client.read_pdf(model, data, PDF_PROMPT))
         if text:
             return text
@@ -108,7 +119,7 @@ def _load_url(url: str, client, model: str) -> tuple[Source, list[str]]:
     kind = response.headers.get("content-type", "").lower()
     name = url.rstrip("/").rsplit("/", 1)[-1] or url
     if "pdf" in kind or url.lower().endswith(".pdf"):
-        return Source(url, name, _from_pdf(response.content, client, model)), []
+        return Source(url, name, _from_pdf(url, response.content, client, model)), []
     if "html" in kind or "<html" in response.text[:2000].lower():
         title, text = _from_html(response.text, name)
         return Source(url, title, text), _linked_pages(response.url, response.text)
@@ -118,7 +129,7 @@ def _load_url(url: str, client, model: str) -> tuple[Source, list[str]]:
 def _load_file(path: Path, client, model: str) -> Source:
     suffix = path.suffix.lower()
     if suffix == ".pdf":
-        return Source(str(path), path.stem, _from_pdf(path.read_bytes(), client, model))
+        return Source(str(path), path.stem, _from_pdf(str(path), path.read_bytes(), client, model))
     raw = path.read_text(encoding="utf-8", errors="replace")
     if suffix in (".html", ".htm"):
         title, text = _from_html(raw, path.stem)
@@ -136,7 +147,7 @@ def _load_linked(
     for link in pending:
         try:
             source, _ = _load_url(link, client, model)
-        except requests.RequestException as error:
+        except (requests.RequestException, ValueError) as error:
             progress(
                 Step("read", f"Skipped a linked page that could not be read: {link} ({error})")
             )

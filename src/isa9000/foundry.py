@@ -54,9 +54,18 @@ class Foundry:
             {"type": "input_text", "text": prompt},
         ]
         try:
-            return self.text(model, [{"role": "user", "content": content}])
+            with self.client.responses.create(
+                model=model,
+                input=[{"role": "user", "content": content}],
+                reasoning=self.reasoning,
+                stream=True,
+            ) as stream:
+                for event in stream:
+                    if event.type in ("response.completed", "response.incomplete"):
+                        return event.response.output_text
         except openai.BadRequestError:
             return ""
+        raise RuntimeError(f"{model} did not finish reading the PDF")
 
     def speak(
         self, model: str, voice: str, style: str, pronunciations: dict[str, str], text: str
