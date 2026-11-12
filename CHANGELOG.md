@@ -3,6 +3,13 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.3.5
+
+### Changed
+
+- A recording may be up to 35% longer than its text needs, up from 30%. Scripts full
+  of prices and other numbers were rejected.
+
 ## 0.3.4
 
 ### Fixed
