@@ -17,7 +17,7 @@ ATTEMPTS = 3
 SYNTHESIS_WPM = 140
 SYNTHESIS_RANGE = (0.5, 1.6)
 BASELINE_WPM = 150
-LENGTH_WINDOW = (0.85, 1.35)
+LENGTH_WINDOW = (0.85, 1.40)
 SPOT_CHECK_SECONDS = 30
 SPOT_CHECK_WORDS = 25
 SPOT_CHECK_MIN_HEARD = 0.7
@@ -67,10 +67,15 @@ def _chunks(text: str, chunked: bool) -> list[str]:
     ]
 
 
+def _words_to_say(text: str) -> int:
+    numbers = re.findall(r"(?<![A-Za-z])\d[\d.,]*", text)
+    return len(text.split()) - len(numbers) + sum(map(str.isdigit, "".join(numbers)))
+
+
 def _speak_checked(speaker: Speaker, text: str) -> tuple[bytes, int]:
     # Text-to-speech occasionally stops early or rambles; a clip far off the expected length
     # is recorded again.
-    expected = len(text.split()) / SYNTHESIS_WPM * 60
+    expected = _words_to_say(text) / SYNTHESIS_WPM * 60
     low, high = SYNTHESIS_RANGE
     seconds = 0.0
     for _ in range(ATTEMPTS):
@@ -109,7 +114,7 @@ def _transcribe(speaker: Speaker, pcm: bytes, rate: int) -> list[str]:
 
 def _off_length(text: str, pcm: bytes, rate: int) -> str:
     seconds = len(pcm) / (2 * rate)
-    expected = len(text.split()) / BASELINE_WPM * 60
+    expected = _words_to_say(text) / BASELINE_WPM * 60
     low, high = LENGTH_WINDOW
     if low * expected <= seconds <= high * expected:
         return ""

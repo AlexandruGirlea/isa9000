@@ -5,10 +5,11 @@ Versions follow [semantic versioning](https://semver.org/).
 
 ## 0.3.5
 
-### Changed
+### Fixed
 
-- A recording may be up to 35% longer than its text needs, up from 30%. Scripts full
-  of prices and other numbers were rejected.
+- A script full of prices and other numbers no longer fails its audio length check.
+  A number now counts as one word per digit, and a recording may be up to 40% longer
+  than its text needs, up from 30%.
 
 ## 0.3.4
 

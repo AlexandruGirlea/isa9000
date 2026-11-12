@@ -45,8 +45,9 @@ and record it anyway.
 
 - **While recording:** a take outside 0.5 to 1.6 times the length at 140 words
   per minute is recorded again, up to three times.
-- **After recording:** the take must be between 15% shorter and 35% longer than
-  the text needs at 150 words per minute, and the first and last 30 seconds are
+- **After recording:** the take must be between 15% shorter and 40% longer than
+  the text needs at 150 words per minute, counting a number as one word per digit,
+  and the first and last 30 seconds are
   transcribed: at least 70% of the first and last 25 words must be heard.
 - **If a check fails,** the episode is recorded again in parts of four
   paragraphs. If it still fails, the run stops, no MP3 is kept, and you can
