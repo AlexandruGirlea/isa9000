@@ -21,7 +21,7 @@ def test_natural_variation_is_kept(gemini, speaker, tmp_path, stretch):
     assert gemini.calls.count("speech") == 1
 
 
-@pytest.mark.parametrize("stretch", [0.8, 1.4, 30.0])
+@pytest.mark.parametrize("stretch", [0.8, 1.5, 30.0])
 def test_lengths_outside_the_window_fail(gemini, speaker, tmp_path, stretch):
     gemini.stretch = stretch
     with pytest.raises(SpeechError):

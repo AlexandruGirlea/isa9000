@@ -3,6 +3,14 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [semantic versioning](https://semver.org/).
 
+## 0.3.5
+
+### Fixed
+
+- A script full of prices and other numbers no longer fails its audio length check.
+  A number now counts as one word per digit, and a recording may be up to 40% longer
+  than its text needs, up from 30%.
+
 ## 0.3.4
 
 ### Fixed
